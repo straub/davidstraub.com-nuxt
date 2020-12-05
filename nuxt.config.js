@@ -41,7 +41,9 @@ export default {
     // https://go.nuxtjs.dev/buefy
     'nuxt-buefy',
     // https://go.nuxtjs.dev/axios
-    '@nuxtjs/axios'
+    '@nuxtjs/axios',
+    // https://www.npmjs.com/package/nuxt-matomo
+    ['nuxt-matomo', { matomoUrl: '//straub.matomo.cloud/', siteId: 1 }]
   ],
 
   // Axios module configuration (https://go.nuxtjs.dev/config-axios)
