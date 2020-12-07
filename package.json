@@ -25,7 +25,7 @@
   "dependencies": {
     "@nuxtjs/axios": "5.12.3",
     "@nuxtjs/ngrok": "2.0.0",
-    "core-js": "3.8.0",
+    "core-js": "3.8.1",
     "nuxt": "2.14.9",
     "nuxt-buefy": "0.4.4",
     "nuxt-matomo": "1.2.3"
