@@ -1,5 +1,9 @@
 <template>
-  <MyName />
+  <main>
+    <MyName />
+    <MyTagline />
+    <MyBio />
+  </main>
 </template>
 
 <script>
