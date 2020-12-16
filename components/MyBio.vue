@@ -1,9 +1,27 @@
 <template>
-  <p>
-    I'm an Agile team leader and full stack web engineer located
-    near the Metro Detroit Area in Michigan, USA. I enjoy building
-    experiences on the Internet. I work for HelloWorld (formerly ePrize),
-    a consumer engagement agency based in Detroit, as a
-    Team Lead, Senior Software Engineer.
-  </p>
+  <section>
+    <p>
+      I'm an experienced <strong>Agile team leader</strong> and
+      <strong>full-stack web
+        engineer</strong> located in
+      <span itemprop="address" itemscope itemtype="http://www.schema.org/PostalAddress">
+        the <span itemprop="addressLocality">Metro Detroit Area</span> of
+        <em>
+          <span itemprop="addressRegion">Michigan</span>,&nbsp;<span itemprop="addressCountry">USA</span>
+        </em>
+      </span>.
+      I work for
+      <em><a
+        href="https://www.merkleinc.com/"
+        rel="external"
+        itemprop="affiliation worksFor"
+      >Merkle Inc.</a></em>,
+      a global data-driven customer experience management company, as a
+      <strong itemprop="jobTitle">Solutions Architect</strong>, where I guide platform development
+      and help our clients successfully integrate our technology.
+    </p>
+  </section>
 </template>
+
+<style scoped>
+</style>

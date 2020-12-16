@@ -1,0 +1,55 @@
+
+html {
+  background-color: #181a1b;
+  color: #e8e6e3;
+  height: 100%;
+}
+
+body {
+  font-family: Lora, serif;
+  /* https://css-tricks.com/linearly-scale-font-size-with-css-clamp-based-on-the-viewport/#for-those-who-dont-mind-that-edge-case */
+  font-size: clamp(1rem, 0.6250rem + 1.6667vw, 1.5rem);
+}
+
+header {
+  display: grid;
+  grid-template-columns: minmax(25%, auto) min-content;
+  grid-template-areas:
+    "photo name"
+    "photo tagline";
+  column-gap: 5%;
+  justify-items: start;
+  align-items: center;
+  justify-content: center;
+  align-content: center;
+  margin: 0 auto;
+  width: 80%;
+  max-width: 640px;
+  /* white-space: nowrap; */
+}
+
+main {
+  margin: 0 auto;
+  width: 90%;
+  max-width: 890px;
+}
+
+a {
+  color: #f70;
+  text-decoration: none;
+  transition: color 250ms;
+  background-image: linear-gradient(to bottom,rgba(0,0,0,0) 0,#f70 50%);
+  background-repeat: repeat-x;
+  background-position: left 90%;
+  background-size: 10px 1px;
+  /* Skip descenders */
+  text-shadow:
+    -2px -2px #181a1b,
+    -2px 2px #181a1b,
+    2px -2px #181a1b,
+    2px 2px #181a1b;
+}
+
+a:hover {
+    color: #e8e6e3;
+}

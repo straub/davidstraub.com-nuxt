@@ -1,19 +1,19 @@
 <template>
-  <main>
-    <MyName />
-    <MyTagline />
-    <MyBio />
-  </main>
+  <div itemscope itemtype="http://www.schema.org/Person">
+    <link itemprop="url" href="https://davidstraub.com/">
+    <header>
+      <MyPhoto />
+      <MyName />
+      <MyTagline />
+    </header>
+    <main>
+      <MyBio />
+    </main>
+  </div>
 </template>
 
 <script>
-import MyName from '@/components/MyName.vue'
-
 export default {
-  name: 'HomePage',
-
-  components: {
-    MyName
-  }
+  name: 'HomePage'
 }
 </script>
