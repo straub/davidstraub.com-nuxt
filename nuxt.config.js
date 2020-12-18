@@ -58,8 +58,6 @@ export default {
 
   // Modules (https://go.nuxtjs.dev/config-modules)
   modules: [
-    // https://www.npmjs.com/package/nuxt-matomo
-    ['nuxt-matomo', { matomoUrl: '//straub.matomo.cloud/', siteId: 1 }]
   ],
 
   // Axios module configuration (https://go.nuxtjs.dev/config-axios)

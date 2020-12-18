@@ -26,8 +26,7 @@
   "dependencies": {
     "@csstools/normalize.css": "11.0.1",
     "core-js": "3.8.1",
-    "nuxt": "2.14.9",
-    "nuxt-matomo": "1.2.3"
+    "nuxt": "2.14.9"
   },
   "devDependencies": {
     "@commitlint/cli": "11.0.0",
