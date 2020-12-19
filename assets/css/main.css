@@ -59,3 +59,18 @@ a:hover {
   background: #f70;
   text-shadow: none;
 }
+
+/*
+  https://css-tricks.com/slow-movement/#css
+  Animate scrolling only if users don’t prefer reduced motion
+*/
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Add some spacing between the target and the top of the viewport */
+  :target {
+    scroll-margin-top: 0.8em;
+  }
+}
