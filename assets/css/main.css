@@ -53,3 +53,9 @@ a {
 a:hover {
     color: #e8e6e3;
 }
+
+::selection {
+  color: #181a1b;
+  background: #f70;
+  text-shadow: none;
+}
