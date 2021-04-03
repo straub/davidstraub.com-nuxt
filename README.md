@@ -1,5 +1,7 @@
 # davidstraub.com
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/38eaaf69-378a-43a0-b762-22eb3b9ae018/deploy-status)](https://app.netlify.com/sites/davidstraub-com-nuxt/deploys)
+
 ## Build Setup
 
 ```bash
