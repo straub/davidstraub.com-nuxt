@@ -1,7 +1,7 @@
 <template>
   <section>
     <p>
-      I'm an experienced <strong>Agile team leader</strong> and
+      I'm an experienced <strong>team leader</strong> and
       <strong>full-stack web
         engineer</strong> located in
       <span itemprop="address" itemscope itemtype="http://www.schema.org/PostalAddress">
@@ -18,7 +18,7 @@
       >Merkle Inc.</a></em>,
       a global data-driven customer experience management company, as a
       <strong itemprop="jobTitle">Solutions Architect</strong>, where I guide platform development
-      and help our clients successfully integrate our technology.
+      and help our clients integrate our technology successfully.
     </p>
   </section>
 </template>

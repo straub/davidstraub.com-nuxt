@@ -8,6 +8,9 @@
     </header>
     <main>
       <MyBio />
+      <MyConnect />
+      <!-- <MySkills /> -->
+      <!-- <MyExperience /> -->
     </main>
   </div>
 </template>
@@ -17,3 +20,9 @@ export default {
   name: 'HomePage'
 }
 </script>
+
+<style scoped>
+  header {
+    margin-top: 1.5rem;
+  }
+</style>

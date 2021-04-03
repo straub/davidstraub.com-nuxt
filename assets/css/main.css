@@ -36,8 +36,9 @@ main {
 
 a {
   color: #f70;
+  fill: #f70;
   text-decoration: none;
-  transition: color 250ms;
+  transition: color 250ms, fill 250ms;
   background-image: linear-gradient(to bottom,rgba(0,0,0,0) 0,#f70 50%);
   background-repeat: repeat-x;
   background-position: left 90%;
@@ -52,6 +53,7 @@ a {
 
 a:hover {
     color: #e8e6e3;
+    fill: #e8e6e3;
 }
 
 ::selection {
