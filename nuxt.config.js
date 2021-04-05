@@ -72,5 +72,10 @@ export default {
   server: {
     // default port: 3000,
     host: '172.17.0.1' // docker0
+  },
+
+  render: {
+    // Keeps site light until I'm using JS.
+    injectScripts: process.env.NODE_ENV === 'development'
   }
 }
