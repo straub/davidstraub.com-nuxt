@@ -1,12 +1,24 @@
 <template>
   <img
-    src="https://s.gravatar.com/avatar/bebb4160fe6f0fdf2ad371ddf5df9ffa?s=250"
-    width="250"
-    height="250"
+    :srcset="`${gravatarUrl}?s=${size},
+              ${gravatarUrl}?s=${size * 1.5} 1.5x,
+              ${gravatarUrl}?s=${size * 2} 2x`"
+    :src="`${gravatarUrl}?s=${size}`"
+    :width="size"
+    :height="size"
     itemprop="image"
     alt="Photo of David Straub"
   >
 </template>
+
+<script>
+export default {
+  data: () => ({
+    gravatarUrl: 'https://s.gravatar.com/avatar/bebb4160fe6f0fdf2ad371ddf5df9ffa',
+    size: 144
+  })
+}
+</script>
 
 <style scoped>
   img {
@@ -16,6 +28,7 @@
     grid-area: photo;
     width: 90%;
     height: auto;
+    box-sizing: border-box; /* does this make any difference? */
 
     justify-self: center;
 
