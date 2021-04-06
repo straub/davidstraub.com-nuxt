@@ -54,7 +54,11 @@ export default {
     // https://go.nuxtjs.dev/eslint
     '@nuxtjs/eslint-module',
     // https://google-fonts.nuxtjs.org/
-    ['@nuxtjs/google-fonts', { families: { Lora: [400, 700] }, display: 'fallback' }]
+    ['@nuxtjs/google-fonts', {
+      families: { Lora: [400] },
+      display: 'fallback',
+      useStylesheet: true
+    }]
   ],
 
   // Modules (https://go.nuxtjs.dev/config-modules)
