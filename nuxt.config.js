@@ -57,7 +57,8 @@ export default {
     ['@nuxtjs/google-fonts', {
       families: { Lora: [400] },
       display: 'fallback',
-      useStylesheet: true
+      useStylesheet: true,
+      download: true
     }]
   ],
 
