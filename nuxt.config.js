@@ -82,5 +82,10 @@ export default {
   render: {
     // Keeps site light until I'm using JS.
     injectScripts: process.env.NODE_ENV === 'development'
+  },
+
+  generate: {
+    // Use Nuxt 404 page, rather than Netlify's.
+    fallback: true
   }
 }
