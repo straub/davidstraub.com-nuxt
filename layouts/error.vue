@@ -1,8 +1,6 @@
 <template>
   <main>
-    <svg class="icon icon-alert-circle" viewBox="0 0 24 24" aria-hidden="true">
-      <path :d="$options.mdiAlertCircle" />
-    </svg>
+    <IconBase :path="$options.mdiAlertCircle" />
     <div v-if="error.statusCode === 404">
       <h1>Not found <span>:(</span></h1>
       <p>Sorry, but the page you were trying to view does not exist.</p>

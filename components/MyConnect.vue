@@ -1,14 +1,10 @@
 <template>
   <section>
     <a href="http://www.linkedin.com/in/davidstraub" rel="me external" aria-label="LinkedIn">
-      <svg class="icon icon-linkedin" viewBox="0 0 24 24" aria-hidden="true">
-        <path :d="$options.mdiLinkedin" />
-      </svg>
+      <IconBase :path="$options.mdiLinkedin" />
     </a>
     <a href="https://github.com/straub" rel="me external" aria-label="GitHub">
-      <svg class="icon icon-github" viewBox="0 0 24 24" aria-hidden="true">
-        <path :d="$options.mdiGithub" />
-      </svg>
+      <IconBase :path="$options.mdiGithub" />
     </a>
   </section>
 </template>
