@@ -17,8 +17,8 @@
         itemprop="affiliation worksFor"
       >Merkle Inc.</a></em>,
       a global data-driven customer experience management company, as a
-      <strong itemprop="jobTitle">Solutions Architect</strong>, where I guide platform development
-      and help our clients integrate our technology successfully.
+      <strong itemprop="jobTitle">Delivery Advocate</strong>, where I'm responsible for platform
+      architecture and software delivery experience.
     </p>
   </section>
 </template>
