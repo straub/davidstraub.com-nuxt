@@ -1,4 +1,5 @@
 {
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:base"
   ],
@@ -6,7 +7,12 @@
     {
       "extends": [
         "packages:linters",
-        "packages:test"
+        "packages:test",
+        "monorepo:jest"
+      ],
+      "matchPackageNames": [
+        "axe-core",
+        "lint-staged"
       ],
       "automerge": true
     }
