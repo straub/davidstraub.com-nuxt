@@ -15,6 +15,7 @@
         href="https://www.merkleinc.com/"
         rel="external"
         itemprop="affiliation worksFor"
+        target="_blank"
       >Merkle Inc.</a></em>,
       a global data-driven customer experience management company, as a
       <strong itemprop="jobTitle">Delivery Advocate</strong>, where I'm responsible for platform
