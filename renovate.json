@@ -7,12 +7,17 @@
     {
       "extends": [
         "packages:linters",
-        "packages:test",
-        "monorepo:jest"
+        "packages:test"
       ],
       "matchPackageNames": [
         "axe-core",
         "lint-staged"
+      ],
+      "automerge": true
+    },
+    {
+      "extends": [
+        "group:jestMonorepo"
       ],
       "automerge": true
     }
