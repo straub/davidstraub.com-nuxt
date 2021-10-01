@@ -20,6 +20,12 @@
         "group:jestMonorepo"
       ],
       "automerge": true
+    },
+    {
+      "extends": [
+        "group:commitlintMonorepo"
+      ],
+      "automerge": true
     }
   ]
 }
