@@ -26,6 +26,12 @@
         "group:commitlintMonorepo"
       ],
       "automerge": true
+    },
+    {
+      "extends": [
+        "group:babelMonorepo"
+      ],
+      "automerge": true
     }
   ]
 }
