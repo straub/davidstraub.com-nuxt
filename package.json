@@ -33,7 +33,7 @@
     "axe-core": "4.3.3",
     "babel-jest": "27.3.1",
     "eslint": "7.32.0",
-    "eslint-plugin-nuxt": "2.0.0",
+    "eslint-plugin-nuxt": "3.0.0",
     "husky": "6.0.0",
     "is-ci": "3.0.0",
     "jest": "27.3.1",
