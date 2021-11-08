@@ -36,6 +36,6 @@
     {
       "matchPackageNames": ["core-js"],
       "extends": [":automergeMinor"]
-    },
+    }
   ]
 }
