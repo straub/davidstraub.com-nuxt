@@ -32,6 +32,10 @@
         "group:babelMonorepo"
       ],
       "automerge": true
-    }
+    },
+    {
+      "matchPackageNames": ["core-js"],
+      "extends": [":automergeMinor"]
+    },
   ]
 }
