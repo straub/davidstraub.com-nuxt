@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@babel/core": "7.16.0",
-    "@babel/eslint-parser": "7.16.0",
+    "@babel/eslint-parser": "7.16.3",
     "@commitlint/cli": "14.1.0",
     "@commitlint/config-conventional": "14.1.0",
     "@mdi/js": "6.4.95",
