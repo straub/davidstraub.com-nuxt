@@ -11,7 +11,8 @@
       ],
       "matchPackageNames": [
         "axe-core",
-        "lint-staged"
+        "lint-staged",
+        "@vue/test-utils"
       ],
       "automerge": true
     },
