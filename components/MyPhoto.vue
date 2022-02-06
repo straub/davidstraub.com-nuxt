@@ -15,8 +15,8 @@
 export default {
   data: () => ({
     gravatarUrl: 'https://s.gravatar.com/avatar/bebb4160fe6f0fdf2ad371ddf5df9ffa',
-    size: 144
-  })
+    size: 144,
+  }),
 }
 </script>
 

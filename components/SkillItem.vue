@@ -10,12 +10,12 @@ export default {
   props: {
     skill: {
       type: String,
-      required: true
+      required: true,
     },
     detail: {
       type: String,
-      required: true
-    }
-  }
+      required: true,
+    },
+  },
 }
 </script>

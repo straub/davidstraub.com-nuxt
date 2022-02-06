@@ -13,7 +13,7 @@
 import { mdiLinkedin, mdiGithub } from '@mdi/js'
 export default {
   mdiLinkedin,
-  mdiGithub
+  mdiGithub,
 }
 </script>
 
