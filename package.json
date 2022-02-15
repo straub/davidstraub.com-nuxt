@@ -39,7 +39,7 @@
     "jest": "27.5.1",
     "lint-staged": "12.3.4",
     "sass": "1.49.7",
-    "sass-loader": "10.2.1",
+    "sass-loader": "12.6.0",
     "vue-axe": "2.4.4",
     "vue-jest": "3.0.7",
     "yarnhook": "0.5.1"
