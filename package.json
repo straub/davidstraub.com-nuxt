@@ -37,7 +37,7 @@
     "husky": "6.0.0",
     "is-ci": "3.0.1",
     "jest": "27.5.1",
-    "lint-staged": "12.3.7",
+    "lint-staged": "12.3.8",
     "sass": "1.49.7",
     "sass-loader": "10.2.1",
     "vue-axe": "2.4.4",
