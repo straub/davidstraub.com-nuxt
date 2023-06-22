@@ -23,14 +23,14 @@
       >Merkle</a></em>,
       a global customer experience transformation company, as a
       <span itemprop="jobTitle">Delivery Advocate</span>, where I'm responsible for
-      <strong>platform architecture</strong> and <strong>software delivery experience</strong>.
+      <strong>platform architecture</strong> and <strong>software delivery success</strong>.
     </p>
   </section>
 </template>
 
 <script>
 export default {
-  fullYearsOfExperience: yearsSince(new Date(2010, 7, 5)),
+  fullYearsOfExperience: yearsSince(new Date(2010, 7, 6)),
 }
 
 function yearsSince (date) {
