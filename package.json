@@ -21,8 +21,8 @@
     "nuxt": "2.15.8"
   },
   "devDependencies": {
-    "@babel/core": "7.17.12",
-    "@babel/eslint-parser": "7.17.0",
+    "@babel/core": "7.22.10",
+    "@babel/eslint-parser": "7.22.10",
     "@commitlint/cli": "17.0.2",
     "@commitlint/config-conventional": "17.0.2",
     "@mdi/js": "6.5.95",
