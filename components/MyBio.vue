@@ -8,7 +8,7 @@
     </p>
     <p>
       I love life-long learning, iterative improvements, empowered engineers, constructive feedback,
-      radical transparency, inclusive decision-making, proactive communication, mindful meetings,
+      thoughtful transparency, inclusive decision-making, proactive communication, mindful meetings,
       active maintenance, sustainable systems, healthy boundaries, and
       <a href="https://doesstraubwanttokaraoke.com/" target="_blank">karaoke</a>,
       although not necessarily in that order.
