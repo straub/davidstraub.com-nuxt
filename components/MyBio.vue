@@ -17,7 +17,7 @@
       thoughtful transparency, inclusive decision-making, proactive communication, mindful meetings,
       active maintenance, sustainable systems, healthy boundaries, and
       <a
-        ref="https://doesstraubwanttokaraoke.com/"
+        href="https://doesstraubwanttokaraoke.com/"
         rel="external"
         target="_blank"
       >karaoke</a>,
