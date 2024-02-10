@@ -10,7 +10,6 @@
         "packages:test"
       ],
       "matchPackageNames": [
-        "axe-core",
         "lint-staged",
         "@vue/test-utils",
         "@nuxtjs/eslint-config"
