@@ -4,13 +4,23 @@
       I'm a <strong>technical leader</strong> and
       <strong>full stack web engineer</strong> who's spent
       more than <span v-text="$options.fullYearsOfExperience" /> years
-      building tools and guiding agile teams that develop innovative applications for the web platform.
+      building tools and guiding
+      <a
+        href="https://agilemanifesto.org/principles.html"
+        rel="external"
+        target="_blank"
+      >agile</a>
+      teams that develop innovative applications for the web platform.
     </p>
     <p>
       I love life-long learning, iterative improvements, empowered engineers, constructive feedback,
       thoughtful transparency, inclusive decision-making, proactive communication, mindful meetings,
       active maintenance, sustainable systems, healthy boundaries, and
-      <a href="https://doesstraubwanttokaraoke.com/" target="_blank">karaoke</a>,
+      <a
+        ref="https://doesstraubwanttokaraoke.com/"
+        rel="external"
+        target="_blank"
+      >karaoke</a>,
       although not necessarily in that order.
     </p>
     <p>
