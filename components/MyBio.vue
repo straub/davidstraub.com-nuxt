@@ -32,8 +32,9 @@
         target="_blank"
       >Merkle</a></em>,
       a global customer experience transformation company, as a
-      <span itemprop="jobTitle">Delivery Advocate</span>, where I'm responsible for
-      <strong>platform architecture</strong> and <strong>software delivery success</strong>.
+      <span itemprop="jobTitle">Director of Engineering</span>, where
+      I guide teams to deliver <strong>sustainable, adaptable solutions</strong> and
+      foster a culture of <strong>ownership and continuous improvement</strong>.
     </p>
   </section>
 </template>
