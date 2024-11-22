@@ -40,7 +40,7 @@
     "sass": "1.70.0",
     "sass-loader": "10.5.2",
     "vue-jest": "3.0.7",
-    "yarnhook": "0.6.1"
+    "yarnhook": "0.6.2"
   },
   "license": "UNLICENSED"
 }
