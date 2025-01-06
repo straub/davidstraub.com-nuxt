@@ -1,9 +1,15 @@
-export default {
+import { defineNuxtConfig } from 'nuxt/config';
+
+export default defineNuxtConfig({
   // Target (https://go.nuxtjs.dev/config-target)
   target: 'static',
 
+  devServer: {
+    host: '0.0.0.0',
+  },
+
   // Global page headers (https://go.nuxtjs.dev/config-head)
-  head: {
+  meta: {
     htmlAttrs: {
       lang: 'en',
     },
@@ -45,11 +51,8 @@ export default {
   plugins: [
   ],
 
-  // Auto import components (https://go.nuxtjs.dev/config-components)
-  components: true,
-
-  // Modules for dev and build (recommended) (https://go.nuxtjs.dev/config-modules)
-  buildModules: [
+  // Modules (https://go.nuxtjs.dev/config-modules)
+  modules: [
     // https://go.nuxtjs.dev/eslint
     '@nuxtjs/eslint-module',
     // https://google-fonts.nuxtjs.org/
@@ -59,18 +62,8 @@ export default {
       useStylesheet: true,
       download: true,
     }],
+    '@nuxt/test-utils/module',
   ],
-
-  // Modules (https://go.nuxtjs.dev/config-modules)
-  modules: [
-  ],
-
-  // Axios module configuration (https://go.nuxtjs.dev/config-axios)
-  axios: {},
-
-  // Build Configuration (https://go.nuxtjs.dev/config-build)
-  build: {
-  },
 
   // Server configuration - https://nuxtjs.org/faq/host-port/
   server: {
@@ -78,13 +71,10 @@ export default {
     host: '172.17.0.1', // docker0
   },
 
-  render: {
-    // Keeps site light until I'm using JS.
-    injectScripts: process.env.NODE_ENV === 'development',
-  },
-
   generate: {
     // Use Nuxt 404 page, rather than Netlify's.
     fallback: true,
   },
-}
+
+  compatibilityDate: '2025-01-05',
+});

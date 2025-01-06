@@ -36,8 +36,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: Install latest npm
-        run: npm install -g npm@latest
+      # - name: Install latest npm
+      #   run: npm install -g npm@latest
 
       - name: Install dependencies 👨🏻‍💻
         run: npm clean-install

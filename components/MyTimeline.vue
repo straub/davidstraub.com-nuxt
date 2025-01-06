@@ -26,9 +26,9 @@ export default {
           ts: '2010',
         },
       ],
-    }
+    };
   },
-}
+};
 </script>
 
 <style scoped lang="scss">
