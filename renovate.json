@@ -18,25 +18,15 @@
     },
     {
       "extends": [
-        "group:vitestMonorepo"
+        "monorepo:vitest"
       ],
       "automerge": true
     },
     {
       "extends": [
-        "group:commitlintMonorepo"
+        "monorepo:commitlint"
       ],
       "automerge": true
-    },
-    {
-      "extends": [
-        "group:babelMonorepo"
-      ],
-      "automerge": true
-    },
-    {
-      "matchPackageNames": ["core-js"],
-      "extends": [":automergeMinor"]
     }
   ]
 }
