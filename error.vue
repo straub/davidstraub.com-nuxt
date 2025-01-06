@@ -14,9 +14,10 @@
   </main>
 </template>
 <script>
-import { mdiAlertCircle } from '@mdi/js'
+import { mdiAlertCircle } from '@mdi/js';
+import { defineNuxtComponent } from '#app';
 
-export default {
+export default defineNuxtComponent({
   props: {
     error: {
       type: Object,
@@ -25,7 +26,7 @@ export default {
   },
 
   mdiAlertCircle,
-}
+});
 </script>
 
 <style scoped>

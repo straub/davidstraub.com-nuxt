@@ -13,12 +13,12 @@
 </template>
 
 <script>
-import { mdiLinkedin, mdiGithub, mdiMastodon } from '@mdi/js'
+import { mdiLinkedin, mdiGithub, mdiMastodon } from '@mdi/js';
 export default {
   mdiLinkedin,
   mdiGithub,
   mdiMastodon,
-}
+};
 </script>
 
 <style scoped>

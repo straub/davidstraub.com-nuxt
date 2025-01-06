@@ -18,7 +18,7 @@
     },
     {
       "extends": [
-        "group:jestMonorepo"
+        "group:vitestMonorepo"
       ],
       "automerge": true
     },

@@ -42,16 +42,16 @@
 <script>
 export default {
   fullYearsOfExperience: yearsSince(new Date(2010, 7, 6)),
-}
+};
 
 function yearsSince (date) {
-  const now = new Date()
-  let years = now.getFullYear() - date.getFullYear()
-  const m = now.getMonth() - date.getMonth()
+  const now = new Date();
+  let years = now.getFullYear() - date.getFullYear();
+  const m = now.getMonth() - date.getMonth();
   if (m < 0 || (m === 0 && now.getDate() < date.getDate())) {
-    years--
+    years--;
   }
-  return years
+  return years;
 }
 </script>
 
