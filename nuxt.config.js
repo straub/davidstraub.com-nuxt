@@ -9,36 +9,38 @@ export default defineNuxtConfig({
   },
 
   // Global page headers (https://go.nuxtjs.dev/config-head)
-  meta: {
-    htmlAttrs: {
-      lang: 'en',
-    },
-    title: 'David Straub: Leader, Engineer, & Architect',
-    meta: [
-      { charset: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      {
-        hid: 'description',
-        name: 'description',
-        content: 'David Straub is an Agile team leader and full stack ' +
+  app: {
+    head: {
+      htmlAttrs: {
+        lang: 'en',
+      },
+      title: 'David Straub: Leader, Engineer, & Architect',
+      meta: [
+        { charset: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        {
+          hid: 'description',
+          name: 'description',
+          content: 'David Straub is an Agile team leader and full stack ' +
         'web engineer located in the Metro Detroit Area of Michigan, USA.',
-      },
-      { hid: 'author', name: 'author', content: 'David Straub' },
-      { hid: 'copyright', name: 'copyright', content: 'Copyright (c) 2008-present David M. Straub. All Rights Reserved.' },
-      {
-        hid: 'keywords',
-        name: 'keywords',
-        content: 'david straub, david michael straub, straub, web engineer, web developer, software engineer, end to end web engineer, end to end developer, full stack engineer, full stack developer',
-      },
-      {
-        hid: 'google-site-verification',
-        name: 'google-site-verification',
-        content: 'yEJtzso-1g42i96pRvONZWxwn8CskObw3d5klenga7A',
-      },
-    ],
-    link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-    ],
+        },
+        { hid: 'author', name: 'author', content: 'David Straub' },
+        { hid: 'copyright', name: 'copyright', content: 'Copyright (c) 2008-present David M. Straub. All Rights Reserved.' },
+        {
+          hid: 'keywords',
+          name: 'keywords',
+          content: 'david straub, david michael straub, straub, web engineer, web developer, software engineer, end to end web engineer, end to end developer, full stack engineer, full stack developer',
+        },
+        {
+          hid: 'google-site-verification',
+          name: 'google-site-verification',
+          content: 'yEJtzso-1g42i96pRvONZWxwn8CskObw3d5klenga7A',
+        },
+      ],
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+      ],
+    },
   },
 
   // Global CSS (https://go.nuxtjs.dev/config-css)
