@@ -35,6 +35,10 @@ main {
   max-width: 890px;
 }
 
+p {
+  text-wrap: pretty;
+}
+
 a {
   color: #f70;
   fill: #f70;
