@@ -55,6 +55,11 @@ a {
     2px -2px #181a1b,
     2px 2px #181a1b;
 }
+@media print {
+  a {
+    text-shadow: none;
+  }
+}
 
 a:hover {
     color: #e8e6e3;
