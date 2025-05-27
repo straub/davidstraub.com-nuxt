@@ -34,7 +34,7 @@
     "happy-dom": "15.11.7",
     "husky": "9.1.7",
     "is-ci": "4.1.0",
-    "lint-staged": "16.0.0",
+    "lint-staged": "16.1.0",
     "sass": "1.83.1",
     "vitest": "2.1.9",
     "vue": "3.5.13",
