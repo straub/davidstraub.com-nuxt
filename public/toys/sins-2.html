@@ -115,22 +115,26 @@
 
     .panels {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
       gap: 0.75rem;
       margin-top: 0.25rem;
       flex: 1;
+      align-items: stretch;
     }
 
     @media (min-width: 900px) {
       .panels {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       }
+    }
     }
 
     .panel {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      height: 100%;
+      min-height: 0;
     }
 
     .panel-title {
@@ -145,6 +149,8 @@
       display: flex;
       flex-direction: column;
       gap: 0.6rem;
+      flex: 1;
+      min-height: 0;
     }
 
     .card {
@@ -197,21 +203,13 @@
       gap: 0.25rem;
     }
 
-    .label-static {
-      color: #9ca3af;
-      text-transform: uppercase;
-      font-size: 0.72em;
-      letter-spacing: 0.16em;
-      margin-right: 0.25rem;
-    }
-
     .fixed-prefix {
       color: #e5e7eb;
       opacity: 0.9;
     }
 
     .word {
-      cursor: pointer;
+      cursor: grab;
       position: relative;
       z-index: 1;
       padding-inline: 0.05em;
@@ -220,12 +218,21 @@
       white-space: nowrap;
     }
 
+    .word[draggable="true"]:active {
+      cursor: grabbing;
+    }
+
     .word::after { content: ""; display: none; }
 
     .word:hover {
       transform: translateY(-1px);
       text-shadow: 0 0 4px currentColor;
       background: rgba(15, 23, 42, 0.7);
+    }
+
+    .word.drag-over {
+      outline: 1px dashed rgba(148, 163, 184, 0.9);
+      background: rgba(15, 23, 42, 0.9);
     }
 
     .word:active {
@@ -304,7 +311,7 @@
   <div class="app-shell">
     <header>
       <h1>Sins 2: Game Night Generator</h1>
-      <p>Click any neon word to re-roll just that piece. Use the buttons to copy titles and locations.</p>
+      <p>Click neon words to re-roll or drag them between slots. Use the buttons to copy titles and locations.</p>
       <div class="controls">
         <button class="btn" id="rerollAll">
           <span class="icon">🎲</span>
@@ -325,7 +332,7 @@
     </div>
 
     <div class="hint-row">
-      <span>Tip: Pick a title and a location you like, then keep re-rolling individual words until it feels legendary.</span>
+      <span>Tip: Pick a title and a location you like, then drag or re-roll words until it feels legendary.</span>
     </div>
   </div>
 
@@ -358,8 +365,18 @@
 
     const CARD_COUNT = 6;
 
+    // Utility
     function randomItem(arr) {
       return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function shuffle(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
     }
 
     function createCopyButton(type) {
@@ -369,6 +386,14 @@
       btn.dataset.copyType = type; // 'title' or 'location'
       btn.innerHTML = '<span class="icon">📋</span><span>Copy</span>';
       return btn;
+    }
+
+    function makeWordSpan(classes, role) {
+      const span = document.createElement('span');
+      span.className = classes;
+      span.dataset.role = role;
+      span.draggable = true;
+      return span;
     }
 
     function createTitleCard(index) {
@@ -395,14 +420,9 @@
       fixedPrefix.textContent = 'Sins 2:';
       line.appendChild(fixedPrefix);
 
-      const w1 = document.createElement('span');
-      w1.className = 'word title-word neon-1';
-      w1.dataset.role = 'title1';
+      const w1 = makeWordSpan('word title-word neon-1', 'title1');
+      const w2 = makeWordSpan('word title-word neon-2', 'title2');
       line.appendChild(w1);
-
-      const w2 = document.createElement('span');
-      w2.className = 'word title-word neon-2';
-      w2.dataset.role = 'title2';
       line.appendChild(w2);
 
       const copyBtn = createCopyButton('title');
@@ -436,26 +456,16 @@
       const line = document.createElement('div');
       line.className = 'location-line';
 
-      
-
-      const prefix = document.createElement('span');
-      prefix.className = 'word location-word neon-3';
-      prefix.dataset.role = 'prefix';
-      line.appendChild(prefix);
-
+      const prefix = makeWordSpan('word location-word neon-3', 'prefix');
       const ofThe = document.createElement('span');
       ofThe.className = 'fixed-prefix';
       ofThe.textContent = 'of the';
+      const adj = makeWordSpan('word location-word neon-4', 'adjective');
+      const noun = makeWordSpan('word location-word neon-5', 'noun');
+
+      line.appendChild(prefix);
       line.appendChild(ofThe);
-
-      const adj = document.createElement('span');
-      adj.className = 'word location-word neon-4';
-      adj.dataset.role = 'adjective';
       line.appendChild(adj);
-
-      const noun = document.createElement('span');
-      noun.className = 'word location-word neon-5';
-      noun.dataset.role = 'noun';
       line.appendChild(noun);
 
       const copyBtn = createCopyButton('location');
@@ -470,55 +480,55 @@
       return card;
     }
 
+    // Populate with globally unique words per batch
+    function fillTitlesUnique() {
+      const titleSpans = Array.from(document.querySelectorAll('.title-word'));
+      const needed = titleSpans.length;
+      const pool = shuffle(sWords);
+      for (let i = 0; i < needed; i++) {
+        titleSpans[i].textContent = pool[i % pool.length];
+      }
+    }
+
+    function fillLocationRoleUnique(selector, sourceArray) {
+      const spans = Array.from(document.querySelectorAll(selector));
+      const needed = spans.length;
+      const pool = shuffle(sourceArray);
+      for (let i = 0; i < needed; i++) {
+        spans[i].textContent = pool[i % pool.length];
+      }
+    }
+
+    function rerollAll() {
+      fillTitlesUnique();
+      fillLocationRoleUnique('[data-role="prefix"]', prefixes);
+      fillLocationRoleUnique('[data-role="adjective"]', adjectives);
+      fillLocationRoleUnique('[data-role="noun"]', nouns);
+    }
+
+    // Individual rerolls while trying to avoid duplicates
     function rerollTitleWord(wordSpan) {
-      const parentLine = wordSpan.parentElement;
-      const siblings = parentLine.querySelectorAll('.title-word');
-      const otherWord = Array.from(siblings).find(w => w !== wordSpan);
-
-      let next;
-      let safety = 0;
-      do {
-        next = randomItem(sWords);
-        safety++;
-      } while (otherWord && otherWord.textContent === next && safety < 12);
-
-      wordSpan.textContent = next;
+      const all = Array.from(document.querySelectorAll('.title-word'));
+      const used = new Set(all.filter(w => w !== wordSpan).map(w => w.textContent));
+      const candidates = sWords.filter(w => !used.has(w));
+      const pool = candidates.length ? candidates : sWords;
+      wordSpan.textContent = randomItem(pool);
     }
 
     function rerollLocationPiece(wordSpan) {
       const role = wordSpan.dataset.role;
-      let next;
-      if (role === 'prefix') next = randomItem(prefixes);
-      else if (role === 'adjective') next = randomItem(adjectives);
-      else if (role === 'noun') next = randomItem(nouns);
+      let source;
+      if (role === 'prefix') source = prefixes;
+      else if (role === 'adjective') source = adjectives;
+      else if (role === 'noun') source = nouns;
       else return;
-      wordSpan.textContent = next;
-    }
 
-    function populateTitleCard(card) {
-      const words = card.querySelectorAll('.title-word');
-      if (words.length === 2) {
-        let first = randomItem(sWords);
-        let second;
-        let safety = 0;
-        do {
-          second = randomItem(sWords);
-          safety++;
-        } while (second === first && safety < 16);
-
-        words[0].textContent = first;
-        words[1].textContent = second;
-      }
-    }
-
-    function populateLocationCard(card) {
-      const prefixSpan = card.querySelector('[data-role="prefix"]');
-      const adjSpan = card.querySelector('[data-role="adjective"]');
-      const nounSpan = card.querySelector('[data-role="noun"]');
-
-      if (prefixSpan) prefixSpan.textContent = randomItem(prefixes);
-      if (adjSpan) adjSpan.textContent = randomItem(adjectives);
-      if (nounSpan) nounSpan.textContent = randomItem(nouns);
+      const selector = `[data-role="${role}"]`;
+      const all = Array.from(document.querySelectorAll(selector));
+      const used = new Set(all.filter(w => w !== wordSpan).map(w => w.textContent));
+      const candidates = source.filter(w => !used.has(w));
+      const pool = candidates.length ? candidates : source;
+      wordSpan.textContent = randomItem(pool);
     }
 
     function buildTitleCards() {
@@ -527,7 +537,6 @@
       for (let i = 0; i < CARD_COUNT; i++) {
         const card = createTitleCard(i);
         container.appendChild(card);
-        populateTitleCard(card);
       }
     }
 
@@ -537,13 +546,7 @@
       for (let i = 0; i < CARD_COUNT; i++) {
         const card = createLocationCard(i);
         container.appendChild(card);
-        populateLocationCard(card);
       }
-    }
-
-    function rerollAll() {
-      document.querySelectorAll('.card[data-card-type="title"]').forEach(populateTitleCard);
-      document.querySelectorAll('.card[data-card-type="location"]').forEach(populateLocationCard);
     }
 
     function getTitleText(card) {
@@ -570,11 +573,72 @@
       }
     }
 
-    // Event listeners
+    // Drag & drop
+    let dragSrcWord = null;
+
+    function canSwapWords(a, b) {
+      if (!a || !b || a === b) return false;
+      const aIsTitle = a.classList.contains('title-word');
+      const bIsTitle = b.classList.contains('title-word');
+      const aRole = a.dataset.role;
+      const bRole = b.dataset.role;
+
+      // Titles can swap with titles; location pieces only with same role
+      if (aIsTitle && bIsTitle) return true;
+      if (!aIsTitle && !bIsTitle && aRole && bRole && aRole === bRole) return true;
+      return false;
+    }
+
+    document.addEventListener('dragstart', (event) => {
+      const word = event.target.closest('.word');
+      if (!word) return;
+      dragSrcWord = word;
+      event.dataTransfer.effectAllowed = 'move';
+    });
+
+    document.addEventListener('dragend', () => {
+      dragSrcWord = null;
+      document.querySelectorAll('.word.drag-over').forEach(el => el.classList.remove('drag-over'));
+    });
+
+    document.addEventListener('dragover', (event) => {
+      const word = event.target.closest('.word');
+      if (!dragSrcWord || !word) return;
+      if (!canSwapWords(dragSrcWord, word)) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+    });
+
+    document.addEventListener('dragenter', (event) => {
+      const word = event.target.closest('.word');
+      if (!dragSrcWord || !word) return;
+      if (!canSwapWords(dragSrcWord, word)) return;
+      word.classList.add('drag-over');
+    });
+
+    document.addEventListener('dragleave', (event) => {
+      const word = event.target.closest('.word');
+      if (!word) return;
+      word.classList.remove('drag-over');
+    });
+
+    document.addEventListener('drop', (event) => {
+      const target = event.target.closest('.word');
+      if (!dragSrcWord || !target) return;
+      if (!canSwapWords(dragSrcWord, target)) return;
+      event.preventDefault();
+
+      const temp = dragSrcWord.textContent;
+      dragSrcWord.textContent = target.textContent;
+      target.textContent = temp;
+
+      document.querySelectorAll('.word.drag-over').forEach(el => el.classList.remove('drag-over'));
+    });
+
+    // Click events
     document.addEventListener('click', (event) => {
       const target = event.target;
 
-      // Copy buttons (using closest in case icon/text span is clicked)
       const copyBtn = target.closest('.copy-btn');
       if (copyBtn) {
         const card = copyBtn.closest('.card');
@@ -587,7 +651,6 @@
         return;
       }
 
-      // Word rerolls
       if (target.classList.contains('word')) {
         if (target.classList.contains('title-word')) {
           rerollTitleWord(target);
@@ -602,6 +665,7 @@
     // Initial render
     buildTitleCards();
     buildLocationCards();
+    rerollAll();
   </script>
 </body>
 </html>
