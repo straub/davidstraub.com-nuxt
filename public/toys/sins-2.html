@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sins 2: Titles & Locations Generator</title>
+  <style>
+    :root {
+      --bg-main: #020617;
+      --bg-card: rgba(15, 23, 42, 0.98);
+      --border-soft: rgba(148, 163, 184, 0.55);
+      --text-main: #f9fafb;
+      --accent-1: #ff6bcb;
+      --accent-2: #3df5ff;
+      --accent-3: #ffe66d;
+      --accent-4: #7cf59b;
+      --accent-5: #c792ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--text-main);
+      background:
+        radial-gradient(circle at top left, #020617 0, transparent 55%),
+        radial-gradient(circle at bottom right, #020617 0, #000000 55%);
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: clamp(0.5rem, 2vw, 1rem);
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 1120px;
+      border-radius: 1rem;
+      padding: 1.25rem 1.1rem 1rem;
+      background:
+        radial-gradient(circle at top, rgba(56, 189, 248, 0.08), transparent 65%),
+        radial-gradient(circle at bottom, rgba(244, 114, 182, 0.06), transparent 65%),
+        var(--bg-card);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.75);
+      border: 1px solid var(--border-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+
+    header {
+      text-align: center;
+      padding-inline: 0.4rem;
+    }
+
+    header h1 {
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.2rem;
+      text-shadow: 0 0 4px rgba(15, 23, 42, 0.9);
+    }
+
+    header p {
+      font-size: clamp(0.9rem, 1.5vw, 1rem);
+      color: #cbd5f5;
+      opacity: 0.9;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 0.35rem;
+    }
+
+    .btn {
+      padding: 0.55rem 1.35rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: linear-gradient(to bottom right, #1f2933, #020617);
+      color: #e5e7eb;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.1s ease, background 0.1s ease;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.7);
+    }
+
+    .btn span.icon {
+      font-size: 1.1rem;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(148, 163, 184, 0.95);
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.85);
+      background: linear-gradient(to bottom right, #273549, #020617);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.8);
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+      margin-top: 0.25rem;
+      flex: 1;
+    }
+
+    @media (min-width: 768px) {
+      .cards {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .card {
+      padding: 0.85rem 0.85rem 0.9rem;
+      border-radius: 0.9rem;
+      background: #020617;
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.7);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .card-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+
+    .line-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .title-line {
+      font-size: clamp(1.25rem, 2.4vw, 1.7rem);
+      font-weight: 650;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.3rem;
+    }
+
+    .location-line {
+      font-size: clamp(0.95rem, 1.9vw, 1.15rem);
+      color: #e5e7eb;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.25rem;
+    }
+
+    .label-static {
+      color: #9ca3af;
+      text-transform: uppercase;
+      font-size: 0.72em;
+      letter-spacing: 0.16em;
+      margin-right: 0.25rem;
+    }
+
+    .fixed-prefix {
+      color: #e5e7eb;
+      opacity: 0.9;
+    }
+
+    .word {
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+      padding-inline: 0.05em;
+      border-radius: 0.25em;
+      transition: transform 0.08s ease, text-shadow 0.08s ease, background 0.08s ease;
+      white-space: nowrap;
+    }
+
+    .word::after { content: ""; display: none; }
+
+    .word:hover::after {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .word:hover {
+      transform: translateY(-1px);
+      text-shadow: 0 0 4px currentColor;
+      background: rgba(15, 23, 42, 0.7);
+    }
+
+    .word:active {
+      transform: translateY(0);
+    }
+
+    .neon-1 {
+      color: var(--accent-1);
+      text-shadow: 0 0 3px rgba(255, 107, 203, 0.6);
+    }
+
+    .neon-2 {
+      color: var(--accent-2);
+      text-shadow: 0 0 3px rgba(61, 245, 255, 0.6);
+    }
+
+    .neon-3 {
+      color: var(--accent-3);
+      text-shadow: 0 0 3px rgba(255, 230, 109, 0.6);
+    }
+
+    .neon-4 {
+      color: var(--accent-4);
+      text-shadow: 0 0 3px rgba(124, 245, 155, 0.6);
+    }
+
+    .neon-5 {
+      color: var(--accent-5);
+      text-shadow: 0 0 3px rgba(199, 146, 255, 0.6);
+    }
+
+    .copy-btn {
+      flex-shrink: 0;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: rgba(15, 23, 42, 0.9);
+      color: #e5e7eb;
+      font-size: 0.7rem;
+      padding: 0.15rem 0.55rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      cursor: pointer;
+      opacity: 0.9;
+      transition: background 0.08s ease, border-color 0.08s ease, transform 0.08s ease, opacity 0.08s ease;
+    }
+
+    .copy-btn span.icon {
+      font-size: 0.9rem;
+    }
+
+    .copy-btn:hover {
+      background: #111827;
+      border-color: rgba(209, 213, 219, 0.95);
+      transform: translateY(-1px);
+      opacity: 1;
+    }
+
+    .copy-btn:active {
+      transform: translateY(0);
+    }
+
+    .hint-row {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      text-align: center;
+      margin-top: 0.15rem;
+    }
+
+    .hint-row span {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <h1>Sins 2: Game Night Generator</h1>
+      <p>Click any neon word to re-roll just that piece. Use the buttons to copy titles and locations.</p>
+      <div class="controls">
+        <button class="btn" id="rerollAll">
+          <span class="icon">🎲</span>
+          <span>New Batch</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="cards" id="cards"></div>
+
+    <div class="hint-row">
+      <span>Tip: Copy the combo you like, then keep re-rolling individual words until it feels legendary.</span>
+    </div>
+  </div>
+
+  <script>
+    // Title S-words
+    const sWords = [
+      "Skirmish","Showdown","Sabotage","Supremacy","Slugfest","Strike","Siege","Standoff","Scuffle","Scourge","Smackdown","Struggle","Subterfuge","Starfall","Salvation","Starlords","Scum","Schemers","Shadowplay","Shenanigans","Symphony","Storm","Sanctions","Syndicate","Sector","Solarstorm","Sentinels","Sedition","Silencers","Singularity","Serenity","Subjugation","Survivors","Sovereigns","Starcrash","Starfire","Spaceslugs","Strongholds","Supplies","Secrets","Swindle","Spacetime","Specters","Sprawl","Stasis","Sacrifice","Signal","Shockwave","Synthesis","Spoils","Sabers","Sanctum","Spire","Scouts","Stargazers","Slipstream","Scepters","Shadows","Synergy","Systemshock","Slingshot","Sailors","Scythes","Shatterpoint","Sentience","Spacelords",
+      /* New */
+      "Satellite","Supernova","Supercluster","Starburst","Stellar","Syzygy","Sagittarius","Serpens","Sculptor","Spica","Spireborn","Starforge","Sunflare","Solaris","Starshield","Skybreaker","Soulfire","Stormrider","Sunspear","Starhammer","Starshaper","Spellstorm","Starwarden","Spellblade","Starweaver","Sunseeker","Stormcall","Starseer","Solstice","Stormseal","Starbane","Starborn","Spacebound","Starstride","Starveil","Starglint","Starcry","Starflare"
+    ];
+
+    // Location pieces
+    const prefixes = [
+      "Planet","Moon","Starbase","Nebula","Outpost","Sector","Asteroid","Black Hole","Space Whale","Wormhole","Orbital Taco Stand","Casino Comet","Docking Bay","Galaxy Mall","Battle Barge",
+      /* New */
+      "Comet","Meteor Field","Lunar Base","Hypergate","Quantum Rift","Orbital Fortress","Celestial Station","Exoplanet Colony","Starforge Keep","Ion Drift Zone","Solar Foundry","Warp Gate","Titan Shipyard","Phase Lane Nexus","Trade Port","Refinery Hub","Astro Dock","Singularity Gate","Gravity Well","Nebular Citadel"
+    ];
+
+    const adjectives = [
+      "Slimy","Haunted","Disco","Exploding","Icy","Glitched","Wacky","Forbidden","Quantum","Screaming","Caffeinated","Banished","Laggy","Overclocked","Unstable","Chaotic","Drunken","Radiant",
+      /* New */
+      "Spectral","Floating","Frostbound","Magnetic","Volatile","Crimson","Ghostly","Neon","Zero-G","Orbital","Eldritch","Luminescent","Ionized","Plasma-Fused","Solar-Charged","Warp-Shifting","Phase-Touched","Ascended","Echoing","Ethereal","Feral","Titanic","Reforged","Anomalous"
+    ];
+
+    const nouns = [
+      "Donut","Penguin","Robot Uprising","Banana Farm","Spaghetti","Llama","Toilet Zone","Pickle Cluster","Beard Nebula","Karaoke Bar","Trash Compactor","LAN Party","Patch Notes","Meteor Shower","Pizza Forge","AFK Lounge",
+      /* New */
+      "Cyber Bazaar","Astro Garden","Wormhole Café","Starship Graveyard","Nebula Library","Gravity Pool","Quantum Casino","Plasma Reef","Photon Ballroom","Orbiting Junkyard","Singularity Market","Titan Forge","Solar Observatory","Phase Reactor","Star Monastery","Crystal Fields","Metal Mines","Credit Vault","Pirate Den","Smuggler’s Bay","Refugee Harbor","Unity Shrine","Nanite Bloom","Dark Fleet Anchorage"
+    ];
+
+    const CARD_COUNT = 6;
+
+    function randomItem(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function createCopyButton(type) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'copy-btn';
+      btn.dataset.copyType = type; // 'title' or 'location'
+      btn.innerHTML = '<span class="icon">📋</span><span>Copy</span>';
+      return btn;
+    }
+
+    function createCard(index) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.cardIndex = index;
+
+      const inner = document.createElement('div');
+      inner.className = 'card-inner';
+
+      const label = document.createElement('div');
+      label.className = 'card-label';
+      label.textContent = `Option ${index + 1}`;
+
+      // Title row
+      const titleRow = document.createElement('div');
+      titleRow.className = 'line-row';
+
+      const titleLine = document.createElement('div');
+      titleLine.className = 'title-line';
+
+      const fixedPrefix = document.createElement('span');
+      fixedPrefix.className = 'fixed-prefix';
+      fixedPrefix.textContent = 'Sins 2:';
+      titleLine.appendChild(fixedPrefix);
+
+      const titleWord1 = document.createElement('span');
+      titleWord1.className = 'word title-word neon-1';
+      titleWord1.dataset.role = 'title1';
+      titleLine.appendChild(titleWord1);
+
+      const titleWord2 = document.createElement('span');
+      titleWord2.className = 'word title-word neon-2';
+      titleWord2.dataset.role = 'title2';
+      titleLine.appendChild(titleWord2);
+
+      const copyTitleBtn = createCopyButton('title');
+
+      titleRow.appendChild(titleLine);
+      titleRow.appendChild(copyTitleBtn);
+
+      // Location row
+      const locationRow = document.createElement('div');
+      locationRow.className = 'line-row';
+
+      const locationLine = document.createElement('div');
+      locationLine.className = 'location-line';
+
+      const locLabel = document.createElement('span');
+      locLabel.className = 'label-static';
+      locLabel.textContent = 'Location';
+      locationLine.appendChild(locLabel);
+
+      const locPrefix = document.createElement('span');
+      locPrefix.className = 'word location-word neon-3';
+      locPrefix.dataset.role = 'prefix';
+      locationLine.appendChild(locPrefix);
+
+      const ofThe = document.createElement('span');
+      ofThe.className = 'fixed-prefix';
+      ofThe.textContent = 'of the';
+      locationLine.appendChild(ofThe);
+
+      const locAdj = document.createElement('span');
+      locAdj.className = 'word location-word neon-4';
+      locAdj.dataset.role = 'adjective';
+      locationLine.appendChild(locAdj);
+
+      const locNoun = document.createElement('span');
+      locNoun.className = 'word location-word neon-5';
+      locNoun.dataset.role = 'noun';
+      locationLine.appendChild(locNoun);
+
+      const copyLocationBtn = createCopyButton('location');
+
+      locationRow.appendChild(locationLine);
+      locationRow.appendChild(copyLocationBtn);
+
+      inner.appendChild(label);
+      inner.appendChild(titleRow);
+      inner.appendChild(locationRow);
+      card.appendChild(inner);
+
+      return card;
+    }
+
+    function rerollTitleWord(wordSpan) {
+      const parentLine = wordSpan.parentElement;
+      const siblings = parentLine.querySelectorAll('.title-word');
+      const otherWord = Array.from(siblings).find(w => w !== wordSpan);
+
+      let next;
+      let safety = 0;
+      do {
+        next = randomItem(sWords);
+        safety++;
+      } while (otherWord && otherWord.textContent === next && safety < 12);
+
+      wordSpan.textContent = next;
+    }
+
+    function rerollLocationPiece(wordSpan) {
+      const role = wordSpan.dataset.role;
+      let next;
+      if (role === 'prefix') next = randomItem(prefixes);
+      else if (role === 'adjective') next = randomItem(adjectives);
+      else if (role === 'noun') next = randomItem(nouns);
+      else return;
+      wordSpan.textContent = next;
+    }
+
+    function populateCard(card) {
+      const titleWords = card.querySelectorAll('.title-word');
+      if (titleWords.length === 2) {
+        let first = randomItem(sWords);
+        let second;
+        let safety = 0;
+        do {
+          second = randomItem(sWords);
+          safety++;
+        } while (second === first && safety < 16);
+
+        titleWords[0].textContent = first;
+        titleWords[1].textContent = second;
+      }
+
+      const prefixSpan = card.querySelector('[data-role="prefix"]');
+      const adjSpan = card.querySelector('[data-role="adjective"]');
+      const nounSpan = card.querySelector('[data-role="noun"]');
+
+      if (prefixSpan) prefixSpan.textContent = randomItem(prefixes);
+      if (adjSpan) adjSpan.textContent = randomItem(adjectives);
+      if (nounSpan) nounSpan.textContent = randomItem(nouns);
+    }
+
+    function buildCards() {
+      const container = document.getElementById('cards');
+      container.innerHTML = '';
+      for (let i = 0; i < CARD_COUNT; i++) {
+        const card = createCard(i);
+        container.appendChild(card);
+        populateCard(card);
+      }
+    }
+
+    function rerollAll() {
+      const cards = document.querySelectorAll('.card');
+      cards.forEach(populateCard);
+    }
+
+    function getTitleText(card) {
+      const words = card.querySelectorAll('.title-word');
+      if (words.length < 2) return '';
+      return `Sins 2: ${words[0].textContent} ${words[1].textContent}`;
+    }
+
+    function getLocationText(card) {
+      const prefixSpan = card.querySelector('[data-role="prefix"]');
+      const adjSpan = card.querySelector('[data-role="adjective"]');
+      const nounSpan = card.querySelector('[data-role="noun"]');
+      if (!prefixSpan || !adjSpan || !nounSpan) return '';
+      return `${prefixSpan.textContent} of the ${adjSpan.textContent} ${nounSpan.textContent}`;
+    }
+
+    async function copyToClipboard(text) {
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (err) {
+        console.error('Clipboard copy failed', err);
+        alert('Could not copy to clipboard in this browser.');
+      }
+    }
+
+    // Event listeners
+    document.addEventListener('click', (event) => {
+      const target = event.target;
+
+      // Copy buttons (using closest in case icon/text span is clicked)
+      const copyBtn = target.closest('.copy-btn');
+      if (copyBtn) {
+        const card = copyBtn.closest('.card');
+        const type = copyBtn.dataset.copyType;
+        if (card && type === 'title') {
+          copyToClipboard(getTitleText(card));
+        } else if (card && type === 'location') {
+          copyToClipboard(getLocationText(card));
+        }
+        return;
+      }
+
+      // Word rerolls
+      if (target.classList.contains('word')) {
+        if (target.classList.contains('title-word')) {
+          rerollTitleWord(target);
+        } else {
+          rerollLocationPiece(target);
+        }
+      }
+    });
+
+    document.getElementById('rerollAll').addEventListener('click', rerollAll);
+
+    // Initial render
+    buildCards();
+  </script>
+</body>
+</html>
