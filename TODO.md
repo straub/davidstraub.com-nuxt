@@ -55,6 +55,126 @@ A new page to showcase interactive HTML experiments.
 
 ---
 
+## Open Pull Requests: Dependency Updates
+
+### PR #334: Update Nuxt to v4 ✅ Tests Passing
+**Branch:** `renovate/major-nuxtjs-monorepo` | **Opened:** 2025-07-15
+**Changes:** `3.20.2` → `4.2.2` (275 additions, 129 deletions)
+
+This is a **major version upgrade** from Nuxt 3 to Nuxt 4 with significant breaking changes and new features.
+
+**Status:**
+- ✅ All CI checks passing
+- ✅ Tests passing
+- ✅ Security checks passing
+
+**Key Changes in Nuxt 4:**
+- New Vite Environment API (opt-in experimental)
+- Enhanced error pages in development
+- Abort control for data fetching (`useAsyncData`)
+- Async data handler extraction (can reduce bundle size by ~39% for static sites)
+- Experimental TypeScript plugin support
+- New `@nuxt/nitro-server` package (internal refactor)
+
+**What We Need to Do:**
+1. **Review breaking changes** - Check the full [Nuxt 4 migration guide](https://nuxt.com/docs/getting-started/upgrade#upgrading-nuxt) for compatibility
+2. **Test locally** - Run `npm ci` and test all features:
+   - Dev server (`npm run dev`)
+   - Build process (`npm run build`)
+   - Static generation (`npm run generate`)
+   - Preview (`npm run preview`)
+3. **Run full test suite** - Unit tests and Playwright visual regression tests
+4. **Check for deprecations** - Review any deprecation warnings in console
+5. **Verify feature branches** - Since this is a major Nuxt update, test that feature branches (`feat/portfolio-redesign`, `feat/print-styles`, `feat/toys-page`) still work
+6. **Update AGENTS.md** - Note Nuxt version change if needed
+7. **Merge** - Since CI is passing, this might be ready to merge after local testing
+
+**Estimated Complexity:** Medium-High (major version with breaking changes, but tests are passing)
+
+---
+
+### PR #306: Update Vitest to v4 ❌ Tests Failing
+**Branch:** `renovate/major-vitest-monorepo` | **Opened:** 2025-01-16
+**Changes:** `3.2.4` → `4.0.16` (1 addition, 1 deletion)
+
+This is a **major version upgrade** from Vitest 3 to Vitest 4 with breaking changes.
+
+**Status:**
+- ❌ CI failing (13s)
+- ❌ Tests failing (14s)
+- ❌ Renovate artifacts failure
+- ✅ Security checks passing
+
+**Key Changes in Vitest 4:**
+- New test artifact API (experimental)
+- OpenTelemetry traces support (experimental)
+- File system cache improvements
+- Updated browser mode defaults
+- Pool options restructured
+- Breaking changes in configuration
+
+**What We Need to Do:**
+1. **Investigate test failures** - Check failed CI logs with `gh run view <run-id> --log-failed`
+2. **Review breaking changes** - Check [Vitest 4 migration guide](https://vitest.dev/guide/migration.html)
+3. **Update config** - `vitest.config.js` may need updates for:
+   - Pool options (deprecated `poolOptions` → new structure)
+   - Browser mode settings
+   - Test environment configuration
+4. **Fix failing tests** - Address any test failures caused by behavior changes
+5. **Update AGENTS.md** - Document any config changes if needed
+6. **Test both test suites:**
+   - `npm test` (unit/component tests)
+   - `npm run test:visual` (Playwright)
+
+**Estimated Complexity:** Medium (tests failing, needs investigation and fixes)
+
+---
+
+### PR #296: Update ESLint to v9 ❌ Tests Failing
+**Branch:** `renovate/major-eslint-monorepo` | **Opened:** 2025-01-06
+**Changes:** `8.57.1` → `9.39.2` (1 addition, 1 deletion)
+
+This is a **major version upgrade** from ESLint 8 to ESLint 9 with **significant breaking changes** (flat config required).
+
+**Status:**
+- ❌ CI failing (16s)
+- ❌ Tests failing (10s)
+- ❌ Renovate artifacts failure
+- ✅ Security checks passing
+- ✅ Netlify deploy preview passing
+
+**Key Breaking Changes in ESLint 9:**
+- **Flat config is now required** - `.eslintrc.json` format is no longer supported
+- Must migrate to `eslint.config.js` (or `.mjs`/`.cjs`)
+- Changed default ignore patterns
+- Removed formatters (moved to `@eslint/stylistic`)
+- Plugin loading changes
+- Updated rule defaults
+
+**What We Need to Do:**
+1. **Investigate test failures** - Check failed CI logs
+2. **Migrate to flat config:**
+   - Convert `.eslintrc.json` → `eslint.config.js`
+   - Update `package.json` scripts if needed
+   - Migrate `@nuxtjs/eslint-config` → compatible flat config
+3. **Update lint-staged** - May need config changes in `package.json`
+4. **Review custom rules:**
+   - Current: semicolons required, always-multiline comma-dangle
+   - Ensure these rules still work in ESLint 9
+5. **Test linting:**
+   - `npm run lint` should work
+   - Pre-commit hooks should work
+6. **Check Nuxt compatibility** - Ensure Nuxt 3/4 works with ESLint 9
+7. **Update AGENTS.md** - Document new ESLint config format
+
+**Estimated Complexity:** High (requires config migration, significant breaking changes)
+
+**Resources:**
+- [ESLint v9 Migration Guide](https://eslint.org/docs/latest/use/migrate-to-9.0.0)
+- [Flat Config Guide](https://eslint.org/docs/latest/use/configure/configuration-files)
+
+---
+
 ## Recommended Completion Order
 
 ### Priority 1: Complete Portfolio Redesign (Nearly Done)
