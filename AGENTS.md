@@ -36,8 +36,7 @@ gh pr view <PR#>         # View PR details including check status
 
 ## Node Version Requirements
 
-- **Required**: Node.js 20.x LTS (see `.node-version`)
-- **Note**: Node 24.x is currently incompatible with the Nuxt test environment setup
+- **Required**: Node.js 24.x LTS (see `.node-version`)
 - **Switching versions**: Use `nvm use` or `nvm install` to switch Node versions
 
 ## Architecture
