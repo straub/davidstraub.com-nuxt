@@ -6,7 +6,7 @@ This file provides guidance to AI coding assistants when working with code in th
 
 ## Project Overview
 
-Personal portfolio/resume website built with **Nuxt 3.15.1** (Vue 3.5.13), deployed as a **static site** to Netlify. The main branch contains a stable, minimal portfolio. Multiple long-lived feature branches contain nearly-complete features that are being polished before merge.
+Personal portfolio/resume website built with **Nuxt 3.20.2** (Vue 3.5.13), deployed as a **static site** to Netlify. The main branch contains a stable, minimal portfolio. Multiple long-lived feature branches contain nearly-complete features that are being polished before merge.
 
 ## Development Commands
 
@@ -24,7 +24,16 @@ npm run test:visual:update  # Update Playwright baseline snapshots
 
 # Code Quality
 npm run lint             # ESLint (enforces semicolons, always-multiline comma-dangle)
+
+# Dependency Management
+npm ci                   # Clean install from lockfile (preferred for consistency)
 ```
+
+## Node Version Requirements
+
+- **Required**: Node.js 20.x LTS (see `.node-version`)
+- **Note**: Node 24.x is currently incompatible with the Nuxt test environment setup
+- **Switching versions**: Use `nvm use` or `nvm install` to switch Node versions
 
 ## Architecture
 
@@ -95,6 +104,13 @@ When working on features, check if they exist on a branch first. Components comm
 
 **When merging feature branches**: Update TODO.md to remove completed features and update dependency maps.
 
+**When updating dependencies** (Nuxt, Node, npm packages):
+- Create a new branch with `chore/` prefix (e.g., `chore/update-nuxt-node`)
+- Update versions incrementally to identify compatibility issues
+- Run both unit tests (`npm test`) and visual tests (`npm run test:visual`)
+- Use `npm ci` for clean installs (preserves lockfile integrity)
+- Update AGENTS.md and TODO.md if Node version or architecture changes
+
 ## Code Conventions
 
 ### Commits & Hooks
@@ -121,7 +137,7 @@ When working on features, check if they exist on a branch first. Components comm
 - **Platform**: Netlify (see badge in README.md)
 - **Build command**: `npm run generate`
 - **Publish directory**: `dist/`
-- **Node version**: 18.x (see `.node-version`)
+- **Node version**: 20.x (see `.node-version`)
 
 ## Key Files
 
