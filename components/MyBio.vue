@@ -1,5 +1,5 @@
 <template>
-  <section>
+  <section class="bio">
     <p>
       I'm a <strong>technical leader</strong> and
       <strong>full stack web engineer</strong> who's spent
@@ -55,8 +55,10 @@ function yearsSince (date) {
 }
 </script>
 
-<style scoped>
-p {
+<style>
+.bio p {
   text-indent: 2rem;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
 }
 </style>

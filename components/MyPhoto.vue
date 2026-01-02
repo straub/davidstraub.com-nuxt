@@ -20,7 +20,7 @@ export default {
 };
 </script>
 
-<style scoped>
+<style>
   img {
     object-fit: cover;
     border-radius: 50%;

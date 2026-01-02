@@ -9,8 +9,8 @@
     <main>
       <MyBio />
       <MyConnect />
-      <!-- <MySkills /> -->
-      <!-- <MyExperience /> -->
+      <MySkillsSection />
+      <MyExperienceTimeline />
     </main>
   </div>
 </template>
@@ -18,7 +18,7 @@
 <script setup>
 </script>
 
-<style scoped>
+<style>
   header {
     margin-top: 1.5rem;
   }
