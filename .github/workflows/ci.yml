@@ -13,11 +13,13 @@ on:
 jobs:
   ci:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
 
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        node: [18, 20]
+        node: [24]
 
     steps:
       - name: Checkout 🛎

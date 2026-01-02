@@ -6,7 +6,7 @@ This file provides guidance to AI coding assistants when working with code in th
 
 ## Project Overview
 
-Personal portfolio/resume website built with **Nuxt 3.15.1** (Vue 3.5.13), deployed as a **static site** to Netlify. The main branch contains a stable, minimal portfolio. Multiple long-lived feature branches contain nearly-complete features that are being polished before merge.
+Personal portfolio/resume website built with **Nuxt 3.20.2** (Vue 3.5.13), deployed as a **static site** to Netlify. The main branch contains a stable, minimal portfolio. Multiple long-lived feature branches contain nearly-complete features that are being polished before merge.
 
 ## Development Commands
 
@@ -24,7 +24,21 @@ npm run test:visual:update  # Update Playwright baseline snapshots
 
 # Code Quality
 npm run lint             # ESLint (enforces semicolons, always-multiline comma-dangle)
+
+# Dependency Management
+npm ci                   # Clean install from lockfile (preferred for consistency)
+
+# CI/PR Checks
+gh pr checks <PR#>       # View all CI check statuses for a PR
+gh run view <run-id> --log-failed  # View failed CI logs
+gh pr view <PR#>         # View PR details including check status
 ```
+
+## Node Version Requirements
+
+- **Required**: Node.js 24.x LTS (see `.node-version`)
+- **Note**: Playwright 1.55+ required for Node 24 compatibility (earlier versions hang during initialization)
+- **Switching versions**: Use `nvm use` or `nvm install` to switch Node versions
 
 ## Architecture
 
@@ -95,6 +109,27 @@ When working on features, check if they exist on a branch first. Components comm
 
 **When merging feature branches**: Update TODO.md to remove completed features and update dependency maps.
 
+**When updating Node versions**:
+- Update `.node-version` as the single source of truth
+- All GitHub Actions workflows read from `.node-version` using `node-version-file: '.node-version'`
+- Test locally with `nvm use $(cat .node-version)` before pushing
+- After pushing, check all workflows pass with `gh pr checks <PR#>`
+
+**When updating dependencies** (Nuxt, npm packages):
+- Create a new branch with `chore/` prefix (e.g., `chore/update-nuxt-node`)
+- Update versions incrementally to identify compatibility issues
+- Use `npm ci` for clean installs (preserves lockfile integrity)
+- Run both unit tests (`npm test`) and visual tests (`npm run test:visual`)
+- Check CI status with `gh pr checks <PR#>` after pushing
+- View failed CI logs with `gh run view <run-id> --log-failed`
+- Update AGENTS.md if architecture or requirements change
+
+**Resolving package-lock.json merge conflicts**:
+- Ensure you're using the correct Node version (see `.node-version`)
+- Run `npm install --package-lock-only` to regenerate based on merged `package.json`
+- **Never manually edit** package-lock.json - always regenerate it
+- Stage the regenerated lockfile and complete the merge/rebase
+
 ## Code Conventions
 
 ### Commits & Hooks
@@ -121,7 +156,7 @@ When working on features, check if they exist on a branch first. Components comm
 - **Platform**: Netlify (see badge in README.md)
 - **Build command**: `npm run generate`
 - **Publish directory**: `dist/`
-- **Node version**: 18.x (see `.node-version`)
+- **Node version**: 20.x (see `.node-version`)
 
 ## Key Files
 
