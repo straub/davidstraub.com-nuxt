@@ -124,6 +124,12 @@ When working on features, check if they exist on a branch first. Components comm
 - View failed CI logs with `gh run view <run-id> --log-failed`
 - Update AGENTS.md if architecture or requirements change
 
+**Resolving package-lock.json merge conflicts**:
+- Ensure you're using the correct Node version (see `.node-version`)
+- Run `npm install --package-lock-only` to regenerate based on merged `package.json`
+- **Never manually edit** package-lock.json - always regenerate it
+- Stage the regenerated lockfile and complete the merge/rebase
+
 ## Code Conventions
 
 ### Commits & Hooks
