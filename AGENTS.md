@@ -37,6 +37,7 @@ gh pr view <PR#>         # View PR details including check status
 ## Node Version Requirements
 
 - **Required**: Node.js 24.x LTS (see `.node-version`)
+- **Note**: Playwright 1.55+ required for Node 24 compatibility (earlier versions hang during initialization)
 - **Switching versions**: Use `nvm use` or `nvm install` to switch Node versions
 
 ## Architecture
