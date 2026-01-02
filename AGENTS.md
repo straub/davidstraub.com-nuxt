@@ -109,15 +109,20 @@ When working on features, check if they exist on a branch first. Components comm
 
 **When merging feature branches**: Update TODO.md to remove completed features and update dependency maps.
 
-**When updating dependencies** (Nuxt, Node, npm packages):
+**When updating Node versions**:
+- Update `.node-version` as the single source of truth
+- All GitHub Actions workflows read from `.node-version` using `node-version-file: '.node-version'`
+- Test locally with `nvm use $(cat .node-version)` before pushing
+- After pushing, check all workflows pass with `gh pr checks <PR#>`
+
+**When updating dependencies** (Nuxt, npm packages):
 - Create a new branch with `chore/` prefix (e.g., `chore/update-nuxt-node`)
 - Update versions incrementally to identify compatibility issues
-- Run both unit tests (`npm test`) and visual tests (`npm run test:visual`)
 - Use `npm ci` for clean installs (preserves lockfile integrity)
+- Run both unit tests (`npm test`) and visual tests (`npm run test:visual`)
 - Check CI status with `gh pr checks <PR#>` after pushing
 - View failed CI logs with `gh run view <run-id> --log-failed`
-- Update AGENTS.md and TODO.md if Node version or architecture changes
-- Update `.github/workflows/ci.yml` if Node version requirements change
+- Update AGENTS.md if architecture or requirements change
 
 ## Code Conventions
 
