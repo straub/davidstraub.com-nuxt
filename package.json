@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@csstools/normalize.css": "12.1.1",
-    "nuxt": "3.20.2"
+    "nuxt": "4.2.2"
   },
   "devDependencies": {
     "@commitlint/cli": "20.3.0",
