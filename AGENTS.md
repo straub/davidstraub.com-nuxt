@@ -27,6 +27,11 @@ npm run lint             # ESLint (enforces semicolons, always-multiline comma-d
 
 # Dependency Management
 npm ci                   # Clean install from lockfile (preferred for consistency)
+
+# CI/PR Checks
+gh pr checks <PR#>       # View all CI check statuses for a PR
+gh run view <run-id> --log-failed  # View failed CI logs
+gh pr view <PR#>         # View PR details including check status
 ```
 
 ## Node Version Requirements
@@ -109,7 +114,10 @@ When working on features, check if they exist on a branch first. Components comm
 - Update versions incrementally to identify compatibility issues
 - Run both unit tests (`npm test`) and visual tests (`npm run test:visual`)
 - Use `npm ci` for clean installs (preserves lockfile integrity)
+- Check CI status with `gh pr checks <PR#>` after pushing
+- View failed CI logs with `gh run view <run-id> --log-failed`
 - Update AGENTS.md and TODO.md if Node version or architecture changes
+- Update `.github/workflows/ci.yml` if Node version requirements change
 
 ## Code Conventions
 
