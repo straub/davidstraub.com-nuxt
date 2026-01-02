@@ -55,58 +55,28 @@ A new page to showcase interactive HTML experiments.
 
 ---
 
-### 4. Playwright Visual Testing (~80% complete)
-**Branch:** `feat/playwright-visual-tests`
-
-Comprehensive visual regression testing setup.
-
-**Changes:**
-- .github/workflows/playwright.yml: CI workflow
-- playwright.config.js: test configuration
-- tests/visual/: 5 test files with snapshots
-  - error.spec.js
-  - homepage.spec.js
-  - print.spec.js
-  - responsive.spec.js
-  - skill-tree.spec.js (has TODO about categories not expanding in screenshots)
-
-**Status:** Infrastructure complete, but tests have known issues (skill-tree expansion)
-
----
-
 ## Recommended Completion Order
 
-### Priority 1: Fix Skill Tree Visual Tests (Quick Win)
-**Effort:** Low | **Impact:** High
-- Fix the TODO in tests/visual/skill-tree.spec.js:29 where categories aren't expanding
-- This blocks the testing feature from being truly complete
-- Related files: tests/visual/skill-tree.spec.js, components/SkillTree.vue
-
-### Priority 2: Complete Portfolio Redesign (Nearly Done)
+### Priority 1: Complete Portfolio Redesign (Nearly Done)
 **Effort:** Low-Medium | **Impact:** High
 - This is your main feature and it's 85% done
 - Verify all visual states work correctly
 - Test the interactive skill tree thoroughly
 - Consider if IconBase.vue needs any updates
 
-### Priority 3: Review Toys Page (Polish)
+### Priority 2: Review Toys Page (Polish)
 **Effort:** Low | **Impact:** Medium
 - Decide what to do with youtube-playlist-manager.html.disabled
 - Either enable it, fix it, or remove it
 - Test the /api/toys endpoint
 - Verify all toys load correctly
 
-### Priority 4: Validate Print Styles (Quick Test)
+### Priority 3: Validate Print Styles (Quick Test)
 **Effort:** Low | **Impact:** Medium
 - Print/PDF export the page and verify it looks good
 - Check print.spec.js snapshots are accurate
 - This is mostly done, just needs validation
 
-### Priority 5: Run All Tests & Commit
-**Effort:** Low | **Impact:** High
-- Run `npm run test:visual` to see current test status
-- Update snapshots if needed with `npm run test:visual:update`
-- Verify CI workflow will pass
 
 ---
 

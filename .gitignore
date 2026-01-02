@@ -92,3 +92,7 @@ sw.*
 
 # VS Code workspace
 *.code-workspace
+
+# Playwright test results
+test-results
+playwright-report
