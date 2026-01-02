@@ -74,21 +74,6 @@ Comprehensive visual regression testing setup.
 
 ---
 
-### 5. Configuration Updates (~100% complete)
-**Branch:** `chore/eslint-config`
-
-Supporting configuration changes.
-
-**Changes:**
-- .eslintrc.json: added `ecmaVersion: "latest"`
-- .gitignore: added playwright test artifacts
-- package.json: added Playwright dependency and test scripts
-- package-lock.json: corresponding lock file updates
-
-**Status:** Complete
-
----
-
 ## Recommended Completion Order
 
 ### Priority 1: Fix Skill Tree Visual Tests (Quick Win)
