@@ -1,0 +1,1626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Watch Later Manager</title>
+    <style>
+        :root {
+            --primary: #ff0000;
+            --primary-dark: #cc0000;
+            --secondary: #282828;
+            --text: #333;
+            --light-bg: #f9f9f9;
+            --border: #e0e0e0;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo h1 {
+            color: var(--primary);
+            font-size: 24px;
+        }
+        
+        .auth-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .filter-group {
+            margin-bottom: 15px;
+        }
+        
+        .filter-group h3 {
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .range-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .range-inputs input {
+            width: 70px;
+        }
+        
+        .videos-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .actions-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .video-list {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .video-item {
+            display: grid;
+            grid-template-columns: 180px 1fr;
+            border-bottom: 1px solid var(--border);
+            padding: 15px;
+        }
+        
+        .video-thumbnail {
+            position: relative;
+        }
+        
+        .video-thumbnail img {
+            width: 100%;
+            border-radius: 4px;
+        }
+        
+        .video-duration {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 2px 4px;
+            border-radius: 2px;
+            font-size: 12px;
+        }
+        
+        .video-info {
+            padding-left: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .video-title {
+            font-weight: 500;
+            margin-bottom: 5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .video-meta {
+            font-size: 14px;
+            color: #606060;
+            margin-bottom: 8px;
+        }
+        
+        .video-action {
+            margin-top: auto;
+            align-self: flex-start;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 6px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+        
+        .badge.workout {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .stats-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: var(--light-bg);
+            padding: 15px;
+            border-radius: 6px;
+        }
+        
+        .stat-title {
+            font-size: 14px;
+            color: #606060;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 500;
+        }
+        
+        .chart-container {
+            height: 250px;
+            margin-top: 20px;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #606060;
+        }
+
+        .loading::after {
+            content: "...";
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: "."; }
+            40% { content: ".."; }
+            60%, 100% { content: "..."; }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .save-filter-container {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+
+        .save-filter-name {
+            margin-bottom: 10px;
+        }
+
+        .saved-filters {
+            margin-top: 10px;
+        }
+
+        .saved-filter-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f0f0f0;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+
+        .saved-filter-item button {
+            padding: 2px 6px;
+            font-size: 12px;
+        }
+
+        .tab-selector {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: #f0f0f0;
+            cursor: pointer;
+            border: 1px solid var(--border);
+        }
+
+        .tab:first-child {
+            border-radius: 4px 0 0 4px;
+        }
+
+        .tab:last-child {
+            border-radius: 0 4px 4px 0;
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <svg width="30" height="20" viewBox="0 0 30 20">
+                    <path d="M15 0C15 0 0 0 0 10V20H30V10C30 10 30 0 15 0Z" fill="#FF0000"/>
+                    <polygon points="12,6 20,10 12,14" fill="white"/>
+                </svg>
+                <h1>Watch Later Manager</h1>
+            </div>
+            <div class="auth-section">
+                <button id="auth-button">Sign in with Google</button>
+                <span id="user-info" class="hidden"></span>
+            </div>
+        </header>
+
+        <div id="main-content" class="hidden">
+            <div class="tab-selector">
+                <div class="tab active" data-tab="videos">Videos</div>
+                <div class="tab" data-tab="stats">Statistics</div>
+            </div>
+
+            <div id="videos-tab">
+                <div class="dashboard">
+                    <div class="filters">
+                        <h2>Filters</h2>
+                        
+                        <div class="filter-group">
+                            <h3>Video Duration</h3>
+                            <div class="range-inputs">
+                                <input type="number" id="min-duration" placeholder="Min (min)" min="0">
+                                <span>to</span>
+                                <input type="number" id="max-duration" placeholder="Max (min)" min="0">
+                            </div>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <h3>Channel</h3>
+                            <input type="text" id="channel-filter" placeholder="Filter by channel name">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <h3>Added to Playlist</h3>
+                            <div class="range-inputs">
+                                <input type="number" id="min-days" placeholder="Min days" min="0">
+                                <span>to</span>
+                                <input type="number" id="max-days" placeholder="Max days" min="0">
+                            </div>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <h3>Sort By</h3>
+                            <select id="sort-by">
+                                <option value="date-added-desc">Date Added (Newest)</option>
+                                <option value="date-added-asc">Date Added (Oldest)</option>
+                                <option value="duration-asc">Duration (Shortest)</option>
+                                <option value="duration-desc">Duration (Longest)</option>
+                                <option value="title-asc">Title (A-Z)</option>
+                                <option value="title-desc">Title (Z-A)</option>
+                            </select>
+                        </div>
+                        
+                        <button id="apply-filters">Apply Filters</button>
+                        <button id="reset-filters">Reset Filters</button>
+                        
+                        <div class="save-filter-container">
+                            <h3>Save Filter Set</h3>
+                            <input type="text" id="filter-name" class="save-filter-name" placeholder="Name this filter set">
+                            <button id="save-filter">Save Filter</button>
+                            
+                            <div class="saved-filters">
+                                <h3>Saved Filters</h3>
+                                <div id="saved-filters-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="videos-container">
+                        <div class="actions">
+                            <div class="actions-group">
+                                <button id="sync-workout">Sync to Workout Playlist</button>
+                                <button id="refresh-videos">Refresh Videos</button>
+                            </div>
+                            
+                            <div class="actions-group">
+                                <span id="filtered-count">0 videos filtered</span>
+                            </div>
+                        </div>
+                        
+                        <div id="video-list" class="video-list">
+                            <div class="loading">Loading videos</div>
+                        </div>
+                        
+                        <div class="pagination">
+                            <button id="prev-page" disabled>Previous</button>
+                            <span id="page-info">Page 1</span>
+                            <button id="next-page">Next</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="stats-tab" class="hidden">
+                <div class="stats-container" style="display: block;">
+                    <h2>Watch Later Statistics</h2>
+                    
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-title">Total Videos</div>
+                            <div class="stat-value" id="total-videos">--</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-title">Total Watch Time</div>
+                            <div class="stat-value" id="total-duration">--</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-title">Average Video Length</div>
+                            <div class="stat-value" id="avg-duration">--</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-title">Workout-Length Videos (30-60min)</div>
+                            <div class="stat-value" id="workout-videos">--</div>
+                        </div>
+                    </div>
+                    
+                    <h3>Duration Distribution</h3>
+                    <div id="duration-chart" class="chart-container"></div>
+                    
+                    <h3>Top Channels</h3>
+                    <div id="channels-chart" class="chart-container"></div>
+                    
+                    <h3>Videos Added Over Time</h3>
+                    <div id="added-chart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="auth-message">
+            <h2>Please sign in to manage your Watch Later playlist</h2>
+        </div>
+
+        <div id="error-container" class="hidden error-message"></div>
+    </div>
+
+    <!-- Load the Google API client library and D3 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <script>
+        // YouTube API configuration
+        const API_KEY = 'AIzaSyDxfSM4t-4TMPgNcNqa7JIfw8FKpSIsb7g';
+        const CLIENT_ID = '364479625791-0tts4h2sark239vtpjqla1kuj4d1rla6.apps.googleusercontent.com';
+        const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'];
+        const SCOPES = 'https://www.googleapis.com/auth/youtube';
+        
+        // DOM elements
+        const authButton = document.getElementById('auth-button');
+        const userInfo = document.getElementById('user-info');
+        const mainContent = document.getElementById('main-content');
+        const authMessage = document.getElementById('auth-message');
+        const errorContainer = document.getElementById('error-container');
+        const videoList = document.getElementById('video-list');
+        const refreshButton = document.getElementById('refresh-videos');
+        const syncWorkoutButton = document.getElementById('sync-workout');
+        const applyFiltersButton = document.getElementById('apply-filters');
+        const resetFiltersButton = document.getElementById('reset-filters');
+        const saveFilterButton = document.getElementById('save-filter');
+        const savedFiltersList = document.getElementById('saved-filters-list');
+        const filteredCount = document.getElementById('filtered-count');
+        const prevPageButton = document.getElementById('prev-page');
+        const nextPageButton = document.getElementById('next-page');
+        const pageInfo = document.getElementById('page-info');
+        const tabs = document.querySelectorAll('.tab');
+        const videosTab = document.getElementById('videos-tab');
+        const statsTab = document.getElementById('stats-tab');
+        
+        // Stats elements
+        const totalVideosEl = document.getElementById('total-videos');
+        const totalDurationEl = document.getElementById('total-duration');
+        const avgDurationEl = document.getElementById('avg-duration');
+        const workoutVideosEl = document.getElementById('workout-videos');
+        
+        // Filter elements
+        const minDurationInput = document.getElementById('min-duration');
+        const maxDurationInput = document.getElementById('max-duration');
+        const channelFilterInput = document.getElementById('channel-filter');
+        const minDaysInput = document.getElementById('min-days');
+        const maxDaysInput = document.getElementById('max-days');
+        const sortBySelect = document.getElementById('sort-by');
+        const filterNameInput = document.getElementById('filter-name');
+        
+        // Application state
+        let state = {
+            authenticated: false,
+            videos: [],
+            filteredVideos: [],
+            currentFilters: {
+                minDuration: null,
+                maxDuration: null,
+                channelName: '',
+                minDays: null,
+                maxDays: null,
+                sortBy: 'date-added-desc'
+            },
+            currentPage: 1,
+            itemsPerPage: 10,
+            savedFilters: {},
+            workoutPlaylistId: null,
+            workoutPlaylistName: 'Workout Videos (30-60min)'
+        };
+        
+        // Initialize the application
+        function init() {
+            loadSavedFilters();
+            setupEventListeners();
+            loadGapiAndInitialize();
+        }
+
+        // Global variables for Google Identity Services
+        let tokenClient;
+        let accessToken = null;
+
+        // Load the Google API client library
+        function loadGapiAndInitialize() {
+            // Load the GAPI client
+            const scriptGapi = document.createElement('script');
+            scriptGapi.src = 'https://apis.google.com/js/api.js';
+            scriptGapi.onload = () => {
+                gapi.load('client', initGapiClient);
+            };
+            document.body.appendChild(scriptGapi);
+
+            // Set up the token client for Identity Services
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: (tokenResponse) => {
+                    // Handle the response
+                    if (tokenResponse && tokenResponse.access_token) {
+                        accessToken = tokenResponse.access_token;
+                        updateSigninStatus(true);
+                    }
+                },
+                error_callback: (error) => {
+                    showError('Error during authentication: ' + error.message);
+                    updateSigninStatus(false);
+                }
+            });
+
+            // Set up auth button
+            authButton.onclick = handleAuthClick;
+        }
+        
+        // Initialize the GAPI client
+        function initGapiClient() {
+            gapi.client.init({
+                apiKey: API_KEY,
+                discoveryDocs: DISCOVERY_DOCS,
+            }).then(() => {
+                console.log('GAPI client initialized');
+                // Check if we already have a token
+                if (accessToken) {
+                    updateSigninStatus(true);
+                } else {
+                    updateSigninStatus(false);
+                }
+            }).catch(error => {
+                showError('Error initializing YouTube API: ' + (error.details || error.message || JSON.stringify(error)));
+            });
+        }
+        
+        // Update UI based on sign-in status
+        function updateSigninStatus(isSignedIn) {
+            state.authenticated = isSignedIn;
+            
+            if (isSignedIn) {
+                authButton.textContent = 'Sign Out';
+                authButton.onclick = handleSignoutClick;
+                
+                // We don't have profile info directly, but we're signed in
+                userInfo.textContent = `Signed in`;
+                userInfo.classList.remove('hidden');
+                
+                authMessage.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+                
+                // Set the authorization header for all future requests
+                gapi.client.setToken({ access_token: accessToken });
+                
+                loadWatchLaterVideos();
+                findOrCreateWorkoutPlaylist();
+            } else {
+                authButton.textContent = 'Sign in with Google';
+                authButton.onclick = handleAuthClick;
+                userInfo.classList.add('hidden');
+                
+                authMessage.classList.remove('hidden');
+                mainContent.classList.add('hidden');
+                
+                // Clear the token
+                accessToken = null;
+                if (gapi.client) {
+                    gapi.client.setToken(null);
+                }
+            }
+        }
+        
+        // Handle sign-in button click
+        function handleAuthClick() {
+            tokenClient.requestAccessToken();
+        }
+        
+        // Handle sign-out button click
+        function handleSignoutClick() {
+            if (accessToken) {
+                // Revoke the token
+                google.accounts.oauth2.revoke(accessToken, () => {
+                    console.log('Token revoked');
+                    accessToken = null;
+                    updateSigninStatus(false);
+                });
+            } else {
+                updateSigninStatus(false);
+            }
+        }
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            refreshButton.addEventListener('click', loadWatchLaterVideos);
+            syncWorkoutButton.addEventListener('click', syncWorkoutPlaylist);
+            applyFiltersButton.addEventListener('click', applyFilters);
+            resetFiltersButton.addEventListener('click', resetFilters);
+            saveFilterButton.addEventListener('click', saveCurrentFilter);
+            prevPageButton.addEventListener('click', () => navigatePage(-1));
+            nextPageButton.addEventListener('click', () => navigatePage(1));
+            
+            // Set up tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.tab;
+                    
+                    // Update active tab
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Show the selected tab content
+                    if (tabName === 'videos') {
+                        videosTab.classList.remove('hidden');
+                        statsTab.classList.add('hidden');
+                    } else if (tabName === 'stats') {
+                        videosTab.classList.add('hidden');
+                        statsTab.classList.remove('hidden');
+                        updateStatistics();
+                    }
+                });
+            });
+        }
+        
+        // Load Watch Later playlist videos
+        function loadWatchLaterVideos() {
+            videoList.innerHTML = '<div class="loading">Loading videos</div>';
+            
+            // First, get the Watch Later playlist ID
+            gapi.client.youtube.channels.list({
+                part: 'contentDetails',
+                mine: true
+            }).then(response => {
+                const watchLaterPlaylistId = response.result.items[0].contentDetails.relatedPlaylists.watchLater;
+                return fetchAllPlaylistItems(watchLaterPlaylistId);
+            }).then(playlistItems => {
+                // Get video details for all videos in the playlist
+                const videoIds = playlistItems.map(item => item.snippet.resourceId.videoId);
+                
+                if (videoIds.length === 0) {
+                    videoList.innerHTML = '<div class="loading">No videos found in Watch Later playlist</div>';
+                    updateVideoStats([]);
+                    return Promise.resolve([]);
+                }
+                
+                // We need to chunk the video IDs due to API limits (max 50 per request)
+                const chunks = chunkArray(videoIds, 50);
+                const promises = chunks.map(chunk => {
+                    return gapi.client.youtube.videos.list({
+                        part: 'snippet,contentDetails,statistics',
+                        id: chunk.join(',')
+                    });
+                });
+                
+                return Promise.all(promises).then(responses => {
+                    let allVideos = [];
+                    
+                    responses.forEach(response => {
+                        allVideos = allVideos.concat(response.result.items);
+                    });
+                    
+                    // Match videos with their playlist position and date added
+                    allVideos.forEach(video => {
+                        const playlistItem = playlistItems.find(item => 
+                            item.snippet.resourceId.videoId === video.id);
+                        
+                        if (playlistItem) {
+                            video.playlistItemId = playlistItem.id;
+                            video.dateAdded = new Date(playlistItem.snippet.publishedAt);
+                            video.position = playlistItem.snippet.position;
+                        }
+                    });
+                    
+                    return allVideos;
+                });
+            }).then(videos => {
+                state.videos = videos;
+                state.filteredVideos = videos;
+                updateVideosList();
+                updateVideoStats(videos);
+                applyFilters();
+            }).catch(error => {
+                showError('Error loading Watch Later playlist: ' + error.message);
+                videoList.innerHTML = '<div>Failed to load videos. Please try again.</div>';
+            });
+        }
+        
+        // Fetch all items from a playlist (handles pagination)
+        function fetchAllPlaylistItems(playlistId, pageToken = null, items = []) {
+            return gapi.client.youtube.playlistItems.list({
+                part: 'snippet',
+                playlistId: playlistId,
+                maxResults: 50,
+                pageToken: pageToken
+            }).then(response => {
+                const newItems = items.concat(response.result.items || []);
+                
+                if (response.result.nextPageToken) {
+                    // More pages available, fetch them recursively
+                    return fetchAllPlaylistItems(playlistId, response.result.nextPageToken, newItems);
+                } else {
+                    // No more pages, return all items
+                    return newItems;
+                }
+            });
+        }
+        
+        // Parse ISO 8601 duration to minutes
+        function parseDuration(duration) {
+            const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+            
+            let hours = 0;
+            let minutes = 0;
+            let seconds = 0;
+            
+            if (match[1]) hours = parseInt(match[1].slice(0, -1));
+            if (match[2]) minutes = parseInt(match[2].slice(0, -1));
+            if (match[3]) seconds = parseInt(match[3].slice(0, -1));
+            
+            return hours * 60 + minutes + (seconds / 60);
+        }
+        
+        // Format duration from minutes to readable text
+        function formatDuration(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = Math.floor(minutes % 60);
+            const secs = Math.round((minutes % 1) * 60);
+            
+            let result = '';
+            if (hours > 0) result += `${hours}:`;
+            result += `${mins.toString().padStart(2, '0')}:`;
+            result += secs.toString().padStart(2, '0');
+            
+            return result;
+        }
+        
+        // Format duration in human-readable text
+        function formatDurationText(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = Math.floor(minutes % 60);
+            
+            if (hours > 0) {
+                return `${hours}h ${mins}m`;
+            } else {
+                return `${mins}m`;
+            }
+        }
+        
+        // Update the videos list in the UI
+        function updateVideosList() {
+            if (state.filteredVideos.length === 0) {
+                videoList.innerHTML = '<div style="padding: 20px; text-align: center;">No videos match your filters</div>';
+                filteredCount.textContent = '0 videos filtered';
+                prevPageButton.disabled = true;
+                nextPageButton.disabled = true;
+                return;
+            }
+            
+            // Calculate pagination
+            const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+            const endIndex = Math.min(startIndex + state.itemsPerPage, state.filteredVideos.length);
+            const paginatedVideos = state.filteredVideos.slice(startIndex, endIndex);
+            
+            // Update pagination UI
+            prevPageButton.disabled = state.currentPage === 1;
+            nextPageButton.disabled = endIndex >= state.filteredVideos.length;
+            pageInfo.textContent = `Page ${state.currentPage} of ${Math.ceil(state.filteredVideos.length / state.itemsPerPage)}`;
+            
+            // Update filtered count
+            filteredCount.textContent = `${state.filteredVideos.length} videos filtered`;
+            
+            // Generate HTML for videos
+            let html = '';
+            
+            paginatedVideos.forEach(video => {
+                const durationMinutes = parseDuration(video.contentDetails.duration);
+                const isWorkoutLength = durationMinutes >= 30 && durationMinutes <= 60;
+                
+                const thumbnailUrl = video.snippet.thumbnails.medium 
+                    ? video.snippet.thumbnails.medium.url 
+                    : 'https://via.placeholder.com/180x90?text=No+Thumbnail';
+                
+                const channelTitle = video.snippet.channelTitle;
+                const videoTitle = video.snippet.title;
+                const videoUrl = `https://www.youtube.com/watch?v=${video.id}`;
+                
+                const daysAgo = Math.floor((new Date() - video.dateAdded) / (1000 * 60 * 60 * 24));
+                const dateAddedText = daysAgo === 0 
+                    ? 'Today' 
+                    : daysAgo === 1 
+                        ? 'Yesterday' 
+                        : `${daysAgo} days ago`;
+                
+                html += `
+                    <div class="video-item" data-video-id="${video.id}">
+                        <div class="video-thumbnail">
+                            <a href="${videoUrl}" target="_blank">
+                                <img src="${thumbnailUrl}" alt="${videoTitle}">
+                                <div class="video-duration">${formatDuration(durationMinutes)}</div>
+                            </a>
+                        </div>
+                        <div class="video-info">
+                            <a href="${videoUrl}" target="_blank" class="video-title">${videoTitle}</a>
+                            <div class="video-meta">
+                                <div>${channelTitle}</div>
+                                <div>Added ${dateAddedText}</div>
+                            </div>
+                            <div class="video-tags">
+                                ${isWorkoutLength ? '<span class="badge workout">Workout Length</span>' : ''}
+                            </div>
+                            <div class="video-action">
+                                <button class="remove-video" data-video-id="${video.id}" data-playlist-item-id="${video.playlistItemId}">Remove from Watch Later</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            videoList.innerHTML = html;
+            
+            // Add event listeners to remove video buttons
+            document.querySelectorAll('.remove-video').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const videoId = button.dataset.videoId;
+                    const playlistItemId = button.dataset.playlistItemId;
+                    removeVideoFromWatchLater(videoId, playlistItemId);
+                });
+            });
+        }
+        
+        // Apply filters to the videos
+        function applyFilters() {
+            // Get filter values
+            const minDuration = minDurationInput.value ? parseFloat(minDurationInput.value) : null;
+            const maxDuration = maxDurationInput.value ? parseFloat(maxDurationInput.value) : null;
+            const channelName = channelFilterInput.value.toLowerCase().trim();
+            const minDays = minDaysInput.value ? parseInt(minDaysInput.value) : null;
+            const maxDays = maxDaysInput.value ? parseInt(maxDaysInput.value) : null;
+            const sortBy = sortBySelect.value;
+            
+            // Save to state
+            state.currentFilters = {
+                minDuration,
+                maxDuration,
+                channelName,
+                minDays,
+                maxDays,
+                sortBy
+            };
+            
+            // Filter videos
+            let filtered = state.videos.slice();
+            
+            // Apply duration filter
+            if (minDuration !== null) {
+                filtered = filtered.filter(video => {
+                    const durationMinutes = parseDuration(video.contentDetails.duration);
+                    return durationMinutes >= minDuration;
+                });
+            }
+            
+            if (maxDuration !== null) {
+                filtered = filtered.filter(video => {
+                    const durationMinutes = parseDuration(video.contentDetails.duration);
+                    return durationMinutes <= maxDuration;
+                });
+            }
+            
+            // Apply channel filter
+            if (channelName) {
+                filtered = filtered.filter(video => {
+                    return video.snippet.channelTitle.toLowerCase().includes(channelName);
+                });
+            }
+            
+            // Apply days filter
+            if (minDays !== null || maxDays !== null) {
+                const now = new Date();
+                
+                filtered = filtered.filter(video => {
+                    const daysAgo = Math.floor((now - video.dateAdded) / (1000 * 60 * 60 * 24));
+                    
+                    if (minDays !== null && daysAgo < minDays) {
+                        return false;
+                    }
+                    
+                    if (maxDays !== null && daysAgo > maxDays) {
+                        return false;
+                    }
+                    
+                    return true;
+                });
+            }
+            
+            // Apply sorting
+            filtered.sort((a, b) => {
+                switch(sortBy) {
+                    case 'date-added-desc':
+                        return b.dateAdded - a.dateAdded;
+                    case 'date-added-asc':
+                        return a.dateAdded - b.dateAdded;
+                    case 'duration-asc':
+                        return parseDuration(a.contentDetails.duration) - parseDuration(b.contentDetails.duration);
+                    case 'duration-desc':
+                        return parseDuration(b.contentDetails.duration) - parseDuration(a.contentDetails.duration);
+                    case 'title-asc':
+                        return a.snippet.title.localeCompare(b.snippet.title);
+                    case 'title-desc':
+                        return b.snippet.title.localeCompare(a.snippet.title);
+                    default:
+                        return 0;
+                }
+            });
+            
+            // Update state and UI
+            state.filteredVideos = filtered;
+            state.currentPage = 1;
+            updateVideosList();
+            
+            // Save filters to localStorage
+            saveFiltersToLocalStorage();
+        }
+        
+        // Reset filters to default values
+        function resetFilters() {
+            minDurationInput.value = '';
+            maxDurationInput.value = '';
+            channelFilterInput.value = '';
+            minDaysInput.value = '';
+            maxDaysInput.value = '';
+            sortBySelect.value = 'date-added-desc';
+            
+            // Reset state
+            state.currentFilters = {
+                minDuration: null,
+                maxDuration: null,
+                channelName: '',
+                minDays: null,
+                maxDays: null,
+                sortBy: 'date-added-desc'
+            };
+            
+            // Apply the reset filters
+            applyFilters();
+        }
+        
+        // Save current filter to localStorage
+        function saveCurrentFilter() {
+            const filterName = filterNameInput.value.trim();
+            
+            if (!filterName) {
+                showError('Please provide a name for your filter set');
+                return;
+            }
+            
+            // Save the current filter
+            state.savedFilters[filterName] = {...state.currentFilters};
+            
+            // Save to localStorage
+            saveFiltersToLocalStorage();
+            
+            // Update UI
+            updateSavedFiltersList();
+            
+            // Clear input
+            filterNameInput.value = '';
+        }
+        
+        // Save filters to localStorage
+        function saveFiltersToLocalStorage() {
+            localStorage.setItem('ytWatchLaterFilters', JSON.stringify(state.savedFilters));
+        }
+        
+        // Load filters from localStorage
+        function loadSavedFilters() {
+            const savedFilters = localStorage.getItem('ytWatchLaterFilters');
+            
+            if (savedFilters) {
+                state.savedFilters = JSON.parse(savedFilters);
+                updateSavedFiltersList();
+            }
+        }
+        
+        // Update the saved filters list in the UI
+        function updateSavedFiltersList() {
+            let html = '';
+            
+            Object.keys(state.savedFilters).forEach(filterName => {
+                html += `
+                    <div class="saved-filter-item">
+                        <span>${filterName}</span>
+                        <div>
+                            <button class="apply-saved-filter" data-filter="${filterName}">Apply</button>
+                            <button class="delete-saved-filter" data-filter="${filterName}">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (html === '') {
+                html = '<div>No saved filters</div>';
+            }
+            
+            savedFiltersList.innerHTML = html;
+            
+            // Add event listeners
+            document.querySelectorAll('.apply-saved-filter').forEach(button => {
+                button.addEventListener('click', () => {
+                    const filterName = button.dataset.filter;
+                    const filter = state.savedFilters[filterName];
+                    
+                    // Apply the saved filter
+                    minDurationInput.value = filter.minDuration !== null ? filter.minDuration : '';
+                    maxDurationInput.value = filter.maxDuration !== null ? filter.maxDuration : '';
+                    channelFilterInput.value = filter.channelName || '';
+                    minDaysInput.value = filter.minDays !== null ? filter.minDays : '';
+                    maxDaysInput.value = filter.maxDays !== null ? filter.maxDays : '';
+                    sortBySelect.value = filter.sortBy || 'date-added-desc';
+                    
+                    // Update state and apply
+                    state.currentFilters = {...filter};
+                    applyFilters();
+                });
+            });
+            
+            document.querySelectorAll('.delete-saved-filter').forEach(button => {
+                button.addEventListener('click', () => {
+                    const filterName = button.dataset.filter;
+                    
+                    // Delete the filter
+                    delete state.savedFilters[filterName];
+                    
+                    // Save and update UI
+                    saveFiltersToLocalStorage();
+                    updateSavedFiltersList();
+                });
+            });
+        }
+        
+        // Navigate between pages
+        function navigatePage(direction) {
+            const newPage = state.currentPage + direction;
+            
+            if (newPage < 1 || newPage > Math.ceil(state.filteredVideos.length / state.itemsPerPage)) {
+                return;
+            }
+            
+            state.currentPage = newPage;
+            updateVideosList();
+            
+            // Scroll to top of video list
+            videoList.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Find or create the workout playlist
+        function findOrCreateWorkoutPlaylist() {
+            // First, search for existing workout playlist
+            gapi.client.youtube.playlists.list({
+                part: 'snippet',
+                mine: true
+            }).then(response => {
+                const workoutPlaylist = response.result.items.find(
+                    playlist => playlist.snippet.title === state.workoutPlaylistName
+                );
+                
+                if (workoutPlaylist) {
+                    // Found existing playlist
+                    state.workoutPlaylistId = workoutPlaylist.id;
+                    return Promise.resolve();
+                } else {
+                    // Need to create new playlist
+                    return gapi.client.youtube.playlists.insert({
+                        part: 'snippet,status',
+                        resource: {
+                            snippet: {
+                                title: state.workoutPlaylistName,
+                                description: 'Workout length videos (30-60 minutes) from Watch Later',
+                                tags: ['workout', 'exercise']
+                            },
+                            status: {
+                                privacyStatus: 'private'
+                            }
+                        }
+                    }).then(response => {
+                        state.workoutPlaylistId = response.result.id;
+                    });
+                }
+            }).catch(error => {
+                showError('Error finding/creating workout playlist: ' + error.message);
+            });
+        }
+        
+        // Sync workout-length videos to the workout playlist
+        function syncWorkoutPlaylist() {
+            if (!state.workoutPlaylistId) {
+                showError('Workout playlist not found or created yet. Please try again in a moment.');
+                return;
+            }
+            
+            // Show syncing status
+            syncWorkoutButton.disabled = true;
+            syncWorkoutButton.textContent = 'Syncing...';
+            
+            // Find all videos between 30-60 minutes
+            const workoutVideos = state.filteredVideos.filter(video => {
+                const durationMinutes = parseDuration(video.contentDetails.duration);
+                return durationMinutes >= 30 && durationMinutes <= 60;
+            });
+            
+            if (workoutVideos.length === 0) {
+                showError('No workout-length videos (30-60 min) found in the current filtered list.');
+                syncWorkoutButton.disabled = false;
+                syncWorkoutButton.textContent = 'Sync to Workout Playlist';
+                return;
+            }
+            
+            // First, clear the workout playlist (get all items and delete them)
+            gapi.client.youtube.playlistItems.list({
+                part: 'id',
+                playlistId: state.workoutPlaylistId,
+                maxResults: 50
+            }).then(response => {
+                const deletePromises = [];
+                
+                if (response.result.items && response.result.items.length > 0) {
+                    response.result.items.forEach(item => {
+                        deletePromises.push(gapi.client.youtube.playlistItems.delete({
+                            id: item.id
+                        }));
+                    });
+                }
+                
+                return Promise.all(deletePromises);
+            }).then(() => {
+                // Now add the workout videos to the playlist
+                const addPromises = [];
+                
+                workoutVideos.forEach(video => {
+                    addPromises.push(gapi.client.youtube.playlistItems.insert({
+                        part: 'snippet',
+                        resource: {
+                            snippet: {
+                                playlistId: state.workoutPlaylistId,
+                                resourceId: {
+                                    kind: 'youtube#video',
+                                    videoId: video.id
+                                }
+                            }
+                        }
+                    }));
+                });
+                
+                return Promise.all(addPromises);
+            }).then(() => {
+                // Show success message
+                showSuccess(`Successfully synced ${workoutVideos.length} videos to the workout playlist.`);
+                
+                syncWorkoutButton.disabled = false;
+                syncWorkoutButton.textContent = 'Sync to Workout Playlist';
+            }).catch(error => {
+                showError('Error syncing workout playlist: ' + error.message);
+                syncWorkoutButton.disabled = false;
+                syncWorkoutButton.textContent = 'Sync to Workout Playlist';
+            });
+        }
+        
+        // Remove a video from the Watch Later playlist
+        function removeVideoFromWatchLater(videoId, playlistItemId) {
+            if (!confirm('Remove this video from your Watch Later playlist?')) {
+                return;
+            }
+            
+            gapi.client.youtube.playlistItems.delete({
+                id: playlistItemId
+            }).then(() => {
+                // Remove from state
+                state.videos = state.videos.filter(v => v.id !== videoId);
+                state.filteredVideos = state.filteredVideos.filter(v => v.id !== videoId);
+                
+                // Update UI
+                updateVideosList();
+                updateVideoStats(state.videos);
+                
+                // Show success message
+                showSuccess('Video removed from Watch Later playlist.');
+            }).catch(error => {
+                showError('Error removing video: ' + error.message);
+            });
+        }
+        
+        // Update the video statistics in the UI
+        function updateVideoStats(videos) {
+            if (!videos || videos.length === 0) {
+                totalVideosEl.textContent = '0';
+                totalDurationEl.textContent = '0h 0m';
+                avgDurationEl.textContent = '0m';
+                workoutVideosEl.textContent = '0';
+                return;
+            }
+            
+            const totalVideos = videos.length;
+            
+            let totalDurationMinutes = 0;
+            let workoutVideosCount = 0;
+            
+            videos.forEach(video => {
+                const duration = parseDuration(video.contentDetails.duration);
+                totalDurationMinutes += duration;
+                
+                if (duration >= 30 && duration <= 60) {
+                    workoutVideosCount++;
+                }
+            });
+            
+            const avgDurationMinutes = totalDurationMinutes / totalVideos;
+            
+            // Update the stats
+            totalVideosEl.textContent = totalVideos;
+            totalDurationEl.textContent = formatDurationText(totalDurationMinutes);
+            avgDurationEl.textContent = formatDurationText(avgDurationMinutes);
+            workoutVideosEl.textContent = workoutVideosCount;
+        }
+        
+        // Update the statistics tab with charts
+        function updateStatistics() {
+            if (!state.videos || state.videos.length === 0) {
+                return;
+            }
+            
+            // Duration distribution chart
+            createDurationChart();
+            
+            // Top channels chart
+            createChannelsChart();
+            
+            // Videos added over time chart
+            createAddedChart();
+        }
+        
+        // Create a duration distribution chart
+        function createDurationChart() {
+            const container = document.getElementById('duration-chart');
+            container.innerHTML = '';
+            
+            // Define duration buckets
+            const buckets = [
+                { label: '< 5 min', min: 0, max: 5 },
+                { label: '5-15 min', min: 5, max: 15 },
+                { label: '15-30 min', min: 15, max: 30 },
+                { label: '30-60 min', min: 30, max: 60 },
+                { label: '1-2 hours', min: 60, max: 120 },
+                { label: '> 2 hours', min: 120, max: Infinity }
+            ];
+            
+            // Count videos in each bucket
+            const data = buckets.map(bucket => {
+                const count = state.videos.filter(video => {
+                    const duration = parseDuration(video.contentDetails.duration);
+                    return duration >= bucket.min && duration < bucket.max;
+                }).length;
+                
+                return {
+                    label: bucket.label,
+                    count
+                };
+            });
+            
+            // Create SVG
+            const margin = { top: 20, right: 30, bottom: 40, left: 40 };
+            const width = container.clientWidth - margin.left - margin.right;
+            const height = container.clientHeight - margin.top - margin.bottom;
+            
+            const svg = d3.select(container)
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+            
+            // X scale
+            const x = d3.scaleBand()
+                .domain(data.map(d => d.label))
+                .range([0, width])
+                .padding(0.1);
+            
+            // Y scale
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.count)])
+                .nice()
+                .range([height, 0]);
+            
+            // Add X axis
+            svg.append('g')
+                .attr('transform', `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .selectAll('text')
+                .attr('transform', 'translate(-10,0)rotate(-45)')
+                .style('text-anchor', 'end');
+            
+            // Add Y axis
+            svg.append('g')
+                .call(d3.axisLeft(y));
+            
+            // Add bars
+            svg.selectAll('.bar')
+                .data(data)
+                .enter()
+                .append('rect')
+                .attr('class', 'bar')
+                .attr('x', d => x(d.label))
+                .attr('y', d => y(d.count))
+                .attr('width', x.bandwidth())
+                .attr('height', d => height - y(d.count))
+                .attr('fill', d => d.label === '30-60 min' ? '#ff0000' : '#4285f4');
+            
+            // Add labels
+            svg.selectAll('.label')
+                .data(data)
+                .enter()
+                .append('text')
+                .attr('class', 'label')
+                .attr('x', d => x(d.label) + x.bandwidth() / 2)
+                .attr('y', d => y(d.count) - 5)
+                .attr('text-anchor', 'middle')
+                .text(d => d.count > 0 ? d.count : '');
+        }
+        
+        // Create a top channels chart
+        function createChannelsChart() {
+            const container = document.getElementById('channels-chart');
+            container.innerHTML = '';
+            
+            // Count videos per channel
+            const channelCounts = {};
+            
+            state.videos.forEach(video => {
+                const channelTitle = video.snippet.channelTitle;
+                channelCounts[channelTitle] = (channelCounts[channelTitle] || 0) + 1;
+            });
+            
+            // Convert to array and sort
+            let channelData = Object.keys(channelCounts).map(channel => ({
+                channel,
+                count: channelCounts[channel]
+            }));
+            
+            channelData.sort((a, b) => b.count - a.count);
+            
+            // Keep only top 10 channels
+            channelData = channelData.slice(0, 10);
+            
+            // Create SVG
+            const margin = { top: 20, right: 30, bottom: 60, left: 60 };
+            const width = container.clientWidth - margin.left - margin.right;
+            const height = container.clientHeight - margin.top - margin.bottom;
+            
+            const svg = d3.select(container)
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+            
+            // X scale
+            const x = d3.scaleBand()
+                .domain(channelData.map(d => d.channel))
+                .range([0, width])
+                .padding(0.1);
+            
+            // Y scale
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(channelData, d => d.count)])
+                .nice()
+                .range([height, 0]);
+            
+            // Add X axis
+            svg.append('g')
+                .attr('transform', `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .selectAll('text')
+                .attr('transform', 'translate(-10,0)rotate(-45)')
+                .style('text-anchor', 'end');
+            
+            // Add Y axis
+            svg.append('g')
+                .call(d3.axisLeft(y));
+            
+            // Add bars
+            svg.selectAll('.bar')
+                .data(channelData)
+                .enter()
+                .append('rect')
+                .attr('class', 'bar')
+                .attr('x', d => x(d.channel))
+                .attr('y', d => y(d.count))
+                .attr('width', x.bandwidth())
+                .attr('height', d => height - y(d.count))
+                .attr('fill', '#4285f4');
+            
+            // Add labels
+            svg.selectAll('.label')
+                .data(channelData)
+                .enter()
+                .append('text')
+                .attr('class', 'label')
+                .attr('x', d => x(d.channel) + x.bandwidth() / 2)
+                .attr('y', d => y(d.count) - 5)
+                .attr('text-anchor', 'middle')
+                .text(d => d.count);
+        }
+        
+        // Create a videos added over time chart
+        function createAddedChart() {
+            const container = document.getElementById('added-chart');
+            container.innerHTML = '';
+            
+            // Group videos by date added
+            const dateGroups = {};
+            
+            state.videos.forEach(video => {
+                const date = new Date(video.dateAdded);
+                const dateStr = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+                
+                dateGroups[dateStr] = (dateGroups[dateStr] || 0) + 1;
+            });
+            
+            // Convert to array and sort
+            let dateData = Object.keys(dateGroups).map(date => ({
+                date,
+                count: dateGroups[date]
+            }));
+            
+            dateData.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // Get the last 14 days of data
+            if (dateData.length > 14) {
+                dateData = dateData.slice(-14);
+            }
+            
+            // Create SVG
+            const margin = { top: 20, right: 30, bottom: 40, left: 40 };
+            const width = container.clientWidth - margin.left - margin.right;
+            const height = container.clientHeight - margin.top - margin.bottom;
+            
+            const svg = d3.select(container)
+                .append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.top + margin.bottom)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+            
+            // X scale
+            const x = d3.scaleBand()
+                .domain(dateData.map(d => d.date))
+                .range([0, width])
+                .padding(0.1);
+            
+            // Y scale
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(dateData, d => d.count)])
+                .nice()
+                .range([height, 0]);
+            
+            // Add X axis
+            svg.append('g')
+                .attr('transform', `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .selectAll('text')
+                .attr('transform', 'translate(-10,0)rotate(-45)')
+                .style('text-anchor', 'end');
+            
+            // Add Y axis
+            svg.append('g')
+                .call(d3.axisLeft(y));
+            
+            // Add line
+            svg.append('path')
+                .datum(dateData)
+                .attr('fill', 'none')
+                .attr('stroke', '#ff0000')
+                .attr('stroke-width', 2)
+                .attr('d', d3.line()
+                    .x(d => x(d.date) + x.bandwidth() / 2)
+                    .y(d => y(d.count))
+                );
+            
+            // Add points
+            svg.selectAll('.dot')
+                .data(dateData)
+                .enter()
+                .append('circle')
+                .attr('class', 'dot')
+                .attr('cx', d => x(d.date) + x.bandwidth() / 2)
+                .attr('cy', d => y(d.count))
+                .attr('r', 4)
+                .attr('fill', '#ff0000');
+        }
+        
+        // Helper functions
+        function chunkArray(array, size) {
+            const chunks = [];
+            for (let i = 0; i < array.length; i += size) {
+                chunks.push(array.slice(i, i + size));
+            }
+            return chunks;
+        }
+        
+        function showError(message) {
+            errorContainer.textContent = message;
+            errorContainer.classList.remove('hidden');
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                errorContainer.classList.add('hidden');
+            }, 5000);
+        }
+        
+        function showSuccess(message) {
+            errorContainer.textContent = message;
+            errorContainer.style.backgroundColor = '#d4edda';
+            errorContainer.style.color = '#155724';
+            errorContainer.classList.remove('hidden');
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                errorContainer.classList.add('hidden');
+                errorContainer.style.backgroundColor = '';
+                errorContainer.style.color = '';
+            }, 5000);
+        }
+        
+        // Initialize the application
+        init();
+    </script>
+</body>
+</html>

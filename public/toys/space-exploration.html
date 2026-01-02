@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Space Physics Simulation</title>
+    <meta name="description" content="An space physics simulation with realistic gravity, planets, and spacecraft mechanics">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        canvas {
+            border: 1px solid #333;
+            background: black;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        canvas.width = 800;
+        canvas.height = 600;
+
+        // Physics constants - reduced for better visibility
+        const dt = 1/60;
+        const thrust = 100; // Reduced from 200
+        const rotationSpeed = 2; // Reduced from 3
+        const drag = 0.98; // Increased drag slightly
+        const asteroidSpawnRate = 0.02;
+        const maxAsteroids = 15;
+
+        // Point defense turret properties
+        const turretFireRate = 100; // ms between shots
+        const turretRange = 400; // Increased from 200
+        const turretRotationSpeed = 4; // radians per second
+        const turretProjectileSpeed = 400; // Increased to match new range
+        const turretProjectileLifetime = 1000; // Increased to match new range
+        const turretOffset = { x: 0, y: 10 }; // Moved to sides of ship
+
+        // Spaceship properties
+        const ship = {
+            pos: { x: canvas.width/2, y: canvas.height/2 },
+            vel: { x: 0, y: 0 },
+            angle: 0,
+            angularVel: 0,
+            width: 20,
+            height: 30,
+            mass: 1,
+            inertia: 1000,
+            thrusting: false,
+            firing: false,
+            lastFireTime: 0,
+            fireRate: 500,
+            health: 100,
+            turrets: [
+                {
+                    angle: -Math.PI/2,
+                    targetAngle: -Math.PI/2,
+                    lastFireTime: 0,
+                    side: 1  // 1 for right, -1 for left
+                },
+                {
+                    angle: -Math.PI/2,
+                    targetAngle: -Math.PI/2,
+                    lastFireTime: 0,
+                    side: -1
+                }
+            ],
+            projectiles: []
+        };
+
+        // Laser beam properties
+        const laserRange = 300;
+        const laserWidth = 2;
+        const laserDamagePerSecond = 100;
+
+        // Obstacle arrays
+        let asteroids = [];
+        let debris = [];
+
+        // Helper functions
+        function randomFloat(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        function distance(a, b) {
+            return Math.sqrt((a.x - b.x)**2 + (a.y - b.y)**2);
+        }
+
+        function normalize(vector) {
+            const mag = Math.sqrt(vector.x**2 + vector.y**2);
+            return mag === 0 ? vector : { x: vector.x/mag, y: vector.y/mag };
+        }
+
+        // Generate a consistent asteroid shape
+        function generateAsteroidVertices(radius, vertices = 8) {
+            const points = [];
+            for (let i = 0; i < vertices; i++) {
+                const angle = (i / vertices) * Math.PI * 2;
+                const r = radius * (0.8 + Math.random() * 0.3);
+                points.push({
+                    x: Math.cos(angle) * r,
+                    y: Math.sin(angle) * r
+                });
+            }
+            return points;
+        }
+
+        // Create asteroid
+        // Collision tracking
+        const recentCollisions = new Set(); // Store collision pair IDs
+        const collisionCooldown = 500; // ms before same objects can create particles again
+
+        function getCollisionId(obj1, obj2) {
+            // Create unique ID for this pair of objects
+            const id1 = obj1.id || `ship`;
+            const id2 = obj2.id || `ast${asteroids.indexOf(obj2)}`;
+            return [id1, id2].sort().join('-'); // Sort to ensure same ID regardless of order
+        }
+
+        function asteroidId(index) {
+            return `ast${index}`;
+        }
+
+        // Initialize asteroid IDs
+        let nextAsteroidId = 0;
+        function generateAsteroidId() {
+            return nextAsteroidId++;
+        }
+
+        function spawnAsteroid() {
+            const side = Math.floor(Math.random() * 4);
+            let x, y;
+
+            switch(side) {
+                case 0: x = Math.random() * canvas.width; y = -30; break;
+                case 1: x = canvas.width + 30; y = Math.random() * canvas.height; break;
+                case 2: x = Math.random() * canvas.width; y = canvas.height + 30; break;
+                case 3: x = -30; y = Math.random() * canvas.height; break;
+            }
+
+            const targetX = canvas.width/2 + randomFloat(-200, 200);
+            const targetY = canvas.height/2 + randomFloat(-200, 200);
+            const angle = Math.atan2(targetY - y, targetX - x);
+            const speed = randomFloat(30, 60); // Reduced from 50-100
+
+            const radius = randomFloat(10, 25);
+            return {
+                id: generateAsteroidId(),
+                pos: { x, y },
+                vel: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
+                radius: radius,
+                rotation: 0,
+                rotationSpeed: randomFloat(-0.5, 0.5), // Reduced from -1,1
+                vertices: generateAsteroidVertices(radius)
+            };
+        }
+
+        // AI control system
+        function updateAI() {
+            let closestDist = Infinity;
+            let closestObj = null;
+
+            for (const asteroid of asteroids) {
+                const dist = distance(ship.pos, asteroid.pos);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestObj = asteroid;
+                }
+            }
+
+            if (closestObj) {
+                const dangerVec = {
+                    x: closestObj.pos.x - ship.pos.x,
+                    y: closestObj.pos.y - ship.pos.y
+                };
+                const dangerDist = Math.sqrt(dangerVec.x**2 + dangerVec.y**2);
+
+                const escapeVec = {
+                    x: -dangerVec.y,
+                    y: dangerVec.x
+                };
+
+                const escapeNorm = normalize(escapeVec);
+                const targetAngle = Math.atan2(escapeNorm.y, escapeNorm.x);
+                const angleDiff = ((targetAngle - ship.angle) + Math.PI*3) % (Math.PI*2) - Math.PI;
+
+                ship.angularVel += Math.sign(angleDiff) * rotationSpeed * dt;
+
+                if (Math.abs(angleDiff) < 0.5) {
+                    ship.thrusting = true;
+                } else {
+                    ship.thrusting = false;
+                }
+
+                const shipDirection = { x: Math.cos(ship.angle), y: Math.sin(ship.angle) };
+                const dotProduct = dangerVec.x * shipDirection.x + dangerVec.y * shipDirection.y;
+                if (dotProduct > 0 && dangerDist < 200) {
+                    ship.firing = true;
+                } else {
+                    ship.firing = false;
+                }
+            }
+        }
+
+        // Physics update
+        function resolveCollision(obj1, obj2) {
+            const dx = obj2.pos.x - obj1.pos.x;
+            const dy = obj2.pos.y - obj1.pos.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist === 0) return; // Prevent division by zero
+
+            // Normal vector
+            const nx = dx / dist;
+            const ny = dy / dist;
+
+            // Relative velocity
+            const dvx = (obj2.vel?.x || 0) - (obj1.vel?.x || 0);
+            const dvy = (obj2.vel?.y || 0) - (obj1.vel?.y || 0);
+
+            // Relative velocity along normal
+            const velAlongNormal = dvx * nx + dvy * ny;
+
+            // Don't resolve if objects are moving apart
+            if (velAlongNormal > 0) return;
+
+            // Restitution (bounciness)
+            const restitution = 0.8;
+
+            // Collision impulse
+            const j = -(1 + restitution) * velAlongNormal;
+            const impulse = j / 2; // Assume equal masses for simplicity
+
+            // Apply impulse
+            if (obj1.vel) {
+                obj1.vel.x -= impulse * nx;
+                obj1.vel.y -= impulse * ny;
+            }
+            if (obj2.vel) {
+                obj2.vel.x += impulse * nx;
+                obj2.vel.y += impulse * ny;
+            }
+
+            // Separate the objects (prevent sticking)
+            const penetration = (obj1.radius || 20) + (obj2.radius || 20) - dist;
+            if (penetration > 0) {
+                const separation = penetration / 2;
+                if (obj1.vel) {
+                    obj1.pos.x -= nx * separation;
+                    obj1.pos.y -= ny * separation;
+                }
+                if (obj2.vel) {
+                    obj2.pos.x += nx * separation;
+                    obj2.pos.y += ny * separation;
+                }
+            }
+        }
+
+        // Particle system
+        const particles = [];
+        const particleLifetime = 600; // Reduced from 1000ms
+
+        function createParticle(x, y, vx, vy, color, lifetime = particleLifetime, size = 1) {
+            particles.push({
+                x, y, vx, vy,
+                color,
+                createTime: Date.now(),
+                lifetime,
+                size,
+                alpha: 0.6 // Reduced initial alpha
+            });
+        }
+
+        function createThrusterParticles(x, y, angle, spread, count, speed, color) {
+            for (let i = 0; i < count; i++) {
+                const particleAngle = angle + (Math.random() - 0.5) * spread;
+                const particleSpeed = speed * (0.5 + Math.random() * 0.5);
+                createParticle(
+                    x, y,
+                    Math.cos(particleAngle) * particleSpeed,
+                    Math.sin(particleAngle) * particleSpeed,
+                    color,
+                    300 + Math.random() * 200, // Shorter lifetime
+                    0.5 + Math.random() * 0.5 // Smaller particles
+                );
+            }
+        }
+
+        function createExplosionParticles(x, y, size, color) {
+            const particleCount = Math.floor(size * 0.8); // Fewer particles
+            for (let i = 0; i < particleCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 20 + Math.random() * 40; // Slower particles
+                createParticle(
+                    x, y,
+                    Math.cos(angle) * speed,
+                    Math.sin(angle) * speed,
+                    color,
+                    400 + Math.random() * 200,
+                    0.5 + Math.random() * 0.8
+                );
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                particle.x += particle.vx * dt;
+                particle.y += particle.vy * dt;
+
+                const age = Date.now() - particle.createTime;
+                particle.alpha = 1 - (age / particle.lifetime);
+
+                if (age > particle.lifetime) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function renderParticles() {
+            for (const particle of particles) {
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fillStyle = particle.color.replace(')', `,${particle.alpha})`);
+                ctx.fill();
+            }
+        }
+
+        function calculateInterceptPoint(shooter, target, projectileSpeed) {
+            // Get relative position and velocity
+            const rx = target.pos.x - shooter.x;
+            const ry = target.pos.y - shooter.y;
+            const vx = target.vel.x || 0;  // Handle case where target velocity is undefined
+            const vy = target.vel.y || 0;
+
+            // Solve quadratic equation: at² + bt + c = 0
+            const a = (vx * vx) + (vy * vy) - (projectileSpeed * projectileSpeed);
+            const b = 2 * (rx * vx + ry * vy);
+            const c = rx * rx + ry * ry;
+
+            const discriminant = b * b - 4 * a * c;
+
+            // Check if intercept is possible
+            if (discriminant < 0) {
+                // If no exact solution, return current position for closest approach
+                return {
+                    x: target.pos.x,
+                    y: target.pos.y,
+                    time: 0
+                };
+            }
+
+            // Calculate intercept time (use smallest positive solution)
+            // Note: Changed sign before sqrt to get correct intercept point
+            let t = (-b + Math.sqrt(discriminant)) / (2 * a);
+            if (t < 0) t = (-b - Math.sqrt(discriminant)) / (2 * a);
+            if (t < 0 || !isFinite(t)) {
+                return {
+                    x: target.pos.x,
+                    y: target.pos.y,
+                    time: 0
+                };
+            }
+
+            // Return predicted intercept point
+            // Add velocity * time to current position
+            return {
+                x: target.pos.x + vx * t,
+                y: target.pos.y + vy * t,
+                time: t
+            };
+        }
+
+        function getPredictedAngle(shooter, target, projectileSpeed) {
+            const intercept = calculateInterceptPoint(shooter, target, projectileSpeed);
+            // Always returns a valid intercept point now, no need to check for null
+            return Math.atan2(
+                intercept.y - shooter.y,
+                intercept.x - shooter.x
+            );
+        }
+
+        function updatePhysics() {
+            // Check asteroid collisions with ship
+            for (const asteroid of asteroids) {
+                const shipRadius = Math.max(ship.width, ship.height) / 2;
+                if (distance(ship.pos, asteroid.pos) < shipRadius + asteroid.radius) {
+                    const collisionId = getCollisionId(ship, asteroid);
+                    resolveCollision(
+                        { pos: ship.pos, vel: ship.vel, radius: shipRadius },
+                        { pos: asteroid.pos, vel: asteroid.vel, radius: asteroid.radius }
+                    );
+
+                    // Only generate particles if this is a new collision
+                    if (!recentCollisions.has(collisionId)) {
+                        recentCollisions.add(collisionId);
+                        setTimeout(() => recentCollisions.delete(collisionId), collisionCooldown);
+
+                        const angle = Math.atan2(
+                            asteroid.pos.y - ship.pos.y,
+                            asteroid.pos.x - ship.pos.x
+                        );
+                        const impactX = ship.pos.x + Math.cos(angle) * shipRadius;
+                        const impactY = ship.pos.y + Math.sin(angle) * shipRadius;
+
+                        createExplosionParticles(
+                            impactX, impactY,
+                            Math.min(shipRadius, asteroid.radius) * 0.7,
+                            'rgba(255, 255, 100'
+                        );
+                    }
+                }
+            }
+
+            // Check asteroid-asteroid collisions
+            for (let i = 0; i < asteroids.length; i++) {
+                for (let j = i + 1; j < asteroids.length; j++) {
+                    const ast1 = asteroids[i];
+                    const ast2 = asteroids[j];
+                        if (distance(ast1.pos, ast2.pos) < ast1.radius + ast2.radius) {
+                        const collisionId = getCollisionId(ast1, ast2);
+                        resolveCollision(ast1, ast2);
+
+                        // Only generate particles if this is a new collision
+                        if (!recentCollisions.has(collisionId)) {
+                            recentCollisions.add(collisionId);
+                            setTimeout(() => recentCollisions.delete(collisionId), collisionCooldown);
+
+                            // Create collision particles at the point of impact
+                            const collisionX = (ast1.pos.x + ast2.pos.x) / 2;
+                            const collisionY = (ast1.pos.y + ast2.pos.y) / 2;
+                            createExplosionParticles(
+                                collisionX, collisionY,
+                                Math.min(ast1.radius, ast2.radius),
+                                'rgba(150, 150, 150'
+                            );
+                        }
+                    }
+                }
+            }
+
+            // Update projectiles
+            for (let i = ship.projectiles.length - 1; i >= 0; i--) {
+                const proj = ship.projectiles[i];
+                proj.x += proj.vx * dt;
+                proj.y += proj.vy * dt;
+
+                // Remove old projectiles
+                if (Date.now() - proj.createTime > turretProjectileLifetime) {
+                    ship.projectiles.splice(i, 1);
+                    continue;
+                }
+
+                // Check projectile-asteroid collisions
+                for (let j = asteroids.length - 1; j >= 0; j--) {
+                    const asteroid = asteroids[j];
+                    if (distance({x: proj.x, y: proj.y}, asteroid.pos) < asteroid.radius) {
+                        ship.projectiles.splice(i, 1);
+
+                        // Smaller asteroids are destroyed, larger ones split
+                        if (asteroid.radius > 15) {
+                            const numFragments = 2;
+                            for (let k = 0; k < numFragments; k++) {
+                                const newRadius = asteroid.radius * 0.6;
+                                asteroids.push({
+                                    pos: { x: asteroid.pos.x, y: asteroid.pos.y },
+                                    vel: {
+                                        x: asteroid.vel.x + randomFloat(-50, 50),
+                                        y: asteroid.vel.y + randomFloat(-50, 50)
+                                    },
+                                    radius: newRadius,
+                                    rotation: randomFloat(0, Math.PI * 2),
+                                    rotationSpeed: randomFloat(-1, 1),
+                                    vertices: generateAsteroidVertices(newRadius)
+                                });
+                            }
+                            asteroids.splice(j, 1);
+                        } else {
+                            // Just damage smaller asteroids
+                            asteroid.radius *= 0.9;
+                            if (asteroid.radius < 5) {
+                                asteroids.splice(j, 1);
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+
+            // Update turret targeting
+            for (const turret of ship.turrets) {
+                // Find closest asteroid in arc
+                let closestDist = turretRange;
+                let closestAsteroid = null;
+
+                for (const asteroid of asteroids) {
+                    const worldTurretPos = {
+                        x: ship.pos.x + turretOffset.x * turret.side * Math.cos(ship.angle),
+                        y: ship.pos.y + turretOffset.y * turret.side * Math.sin(ship.angle)
+                    };
+
+                    const dx = asteroid.pos.x - worldTurretPos.x;
+                    const dy = asteroid.pos.y - worldTurretPos.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < closestDist) {
+                        // Calculate angle to asteroid in turret's local space
+                        const worldAngle = Math.atan2(dy, dx);
+                        const localAngle = worldAngle - ship.angle;
+
+                        // Check if asteroid is in firing arc (90 degrees to each side)
+                        const normalizedAngle = ((localAngle + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+                        if (Math.abs(normalizedAngle) < Math.PI/2) {
+                            closestDist = dist;
+                            closestAsteroid = asteroid;
+                            turret.targetAngle = localAngle;
+                        }
+                    }
+                }
+
+                // Rotate turret toward target with limited speed
+                if (closestAsteroid) {
+                    const angleDiff = ((turret.targetAngle - turret.angle + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+                    turret.angle += Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), turretRotationSpeed * dt);
+
+                    // Fire if pointing close enough to target
+                    if (Math.abs(angleDiff) < 0.1 && Date.now() - turret.lastFireTime > turretFireRate) {
+                        const worldAngle = ship.angle + turret.angle;
+                        const worldTurretPos = {
+                            x: ship.pos.x + (turretOffset.x * turret.side * Math.cos(ship.angle) - turretOffset.y * Math.sin(ship.angle)),
+                            y: ship.pos.y + (turretOffset.y * turret.side * Math.sin(ship.angle) - turretOffset.x * Math.cos(ship.angle))
+                        };
+
+                        ship.projectiles.push({
+                            x: worldTurretPos.x,
+                            y: worldTurretPos.y,
+                            vx: Math.cos(worldAngle) * turretProjectileSpeed,
+                            vy: Math.sin(worldAngle) * turretProjectileSpeed,
+                            createTime: Date.now()
+                        });
+
+                        turret.lastFireTime = Date.now();
+                    }
+                }
+            }
+
+            ship.pos.x += ship.vel.x * dt;
+            ship.pos.y += ship.vel.y * dt;
+            ship.angle += ship.angularVel * dt;
+
+            ship.vel.x *= drag;
+            ship.vel.y *= drag;
+            ship.angularVel *= drag;
+
+            if (ship.thrusting) {
+                const thrustVector = {
+                    x: Math.cos(ship.angle) * thrust,
+                    y: Math.sin(ship.angle) * thrust
+                };
+                ship.vel.x += thrustVector.x * dt;
+                ship.vel.y += thrustVector.y * dt;
+            }
+
+            if (ship.pos.x < 0) ship.pos.x = canvas.width;
+            if (ship.pos.x > canvas.width) ship.pos.x = 0;
+            if (ship.pos.y < 0) ship.pos.y = canvas.height;
+            if (ship.pos.y > canvas.height) ship.pos.y = 0;
+
+            // Update asteroids
+            for (let i = asteroids.length - 1; i >= 0; i--) {
+                const asteroid = asteroids[i];
+                asteroid.pos.x += asteroid.vel.x * dt;
+                asteroid.pos.y += asteroid.vel.y * dt;
+                asteroid.rotation += asteroid.rotationSpeed * dt;
+
+                if (asteroid.pos.x < -50 || asteroid.pos.x > canvas.width + 50 ||
+                    asteroid.pos.y < -50 || asteroid.pos.y > canvas.height + 50) {
+                    asteroids.splice(i, 1);
+                }
+            }
+
+            // Check laser collisions if firing
+            if (ship.firing) {
+                const laserEndX = ship.pos.x + Math.cos(ship.angle) * laserRange;
+                const laserEndY = ship.pos.y + Math.sin(ship.angle) * laserRange;
+
+                // Check each asteroid for laser intersection
+                for (let i = asteroids.length - 1; i >= 0; i--) {
+                    const asteroid = asteroids[i];
+
+                    // Check if laser line intersects asteroid
+                    const dx = laserEndX - ship.pos.x;
+                    const dy = laserEndY - ship.pos.y;
+                    const a = dx * dx + dy * dy;
+                    const b = 2 * (dx * (ship.pos.x - asteroid.pos.x) + dy * (ship.pos.y - asteroid.pos.y));
+                    const c = asteroid.pos.x * asteroid.pos.x + asteroid.pos.y * asteroid.pos.y +
+                            ship.pos.x * ship.pos.x + ship.pos.y * ship.pos.y -
+                            2 * (asteroid.pos.x * ship.pos.x + asteroid.pos.y * ship.pos.y) -
+                            asteroid.radius * asteroid.radius;
+
+                    const discriminant = b * b - 4 * a * c;
+
+                    if (discriminant >= 0) {
+                        // Laser hits asteroid
+                        if (asteroid.radius > 15) {
+                            const numFragments = 2;
+                            for (let k = 0; k < numFragments; k++) {
+                                const newRadius = asteroid.radius * 0.6;
+                                asteroids.push({
+                                    pos: { x: asteroid.pos.x, y: asteroid.pos.y },
+                                    vel: {
+                                        x: asteroid.vel.x + randomFloat(-50, 50),
+                                        y: asteroid.vel.y + randomFloat(-50, 50)
+                                    },
+                                    radius: newRadius,
+                                    rotation: randomFloat(0, Math.PI * 2),
+                                    rotationSpeed: randomFloat(-1, 1),
+                                    vertices: generateAsteroidVertices(newRadius)
+                                });
+                            }
+                        }
+                        asteroids.splice(i, 1);
+                    }
+                }
+            }
+
+            if (Math.random() < asteroidSpawnRate && asteroids.length < maxAsteroids) {
+                asteroids.push(spawnAsteroid());
+            }
+        }
+
+        // Rendering
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw particles behind everything else
+            renderParticles();
+
+            // Draw ship
+            ctx.save();
+            ctx.translate(ship.pos.x, ship.pos.y);
+            ctx.rotate(ship.angle);
+
+            // Draw ship body
+            ctx.beginPath();
+            ctx.moveTo(ship.width, 0);
+            ctx.lineTo(-ship.width/2, ship.height/2);
+            ctx.lineTo(-ship.width/2, -ship.height/2);
+            ctx.closePath();
+            ctx.strokeStyle = '#0f0';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw RCS thrusters when rotating
+            if (Math.abs(ship.angularVel) > 0.1) {
+                ctx.lineWidth = 1;
+                const thrustLength = Math.min(Math.abs(ship.angularVel) * 3, 8);
+
+                // Front RCS thrusters
+                if (ship.angularVel > 0) { // Rotating clockwise
+                    // Top thruster
+                    ctx.beginPath();
+                    ctx.moveTo(ship.width/2, -ship.height/4);
+                    ctx.lineTo(ship.width/2 + thrustLength, -ship.height/4);
+                    ctx.strokeStyle = '#f70';
+                    ctx.stroke();
+
+                    // Add particles
+                    const worldPos = {
+                        x: ship.pos.x + (ship.width/2 * Math.cos(ship.angle) - ship.height/4 * Math.sin(ship.angle)),
+                        y: ship.pos.y + (ship.width/2 * Math.sin(ship.angle) + ship.height/4 * Math.cos(ship.angle))
+                    };
+                    createThrusterParticles(
+                        worldPos.x, worldPos.y,
+                        ship.angle, 0.5, 1,
+                        30, 'rgba(255, 150, 50'
+                    );
+                } else { // Rotating counter-clockwise
+                    // Bottom thruster
+                    ctx.beginPath();
+                    ctx.moveTo(ship.width/2, ship.height/4);
+                    ctx.lineTo(ship.width/2 + thrustLength, ship.height/4);
+                    ctx.strokeStyle = '#f70';
+                    ctx.stroke();
+
+                    // Add particles
+                    const worldPos = {
+                        x: ship.pos.x + (ship.width/2 * Math.cos(ship.angle) + ship.height/4 * Math.sin(ship.angle)),
+                        y: ship.pos.y + (ship.width/2 * Math.sin(ship.angle) - ship.height/4 * Math.cos(ship.angle))
+                    };
+                    createThrusterParticles(
+                        worldPos.x, worldPos.y,
+                        ship.angle, 0.5, 1,
+                        30, 'rgba(255, 150, 50'
+                    );
+                }
+
+                // Rear RCS thrusters
+                if (ship.angularVel > 0) { // Rotating clockwise
+                    // Bottom thruster
+                    ctx.beginPath();
+                    ctx.moveTo(-ship.width/2, ship.height/3);
+                    ctx.lineTo(-ship.width/2 - thrustLength, ship.height/3);
+                    ctx.strokeStyle = '#f70';
+                    ctx.stroke();
+
+                    // Add particles
+                    const worldPos = {
+                        x: ship.pos.x + (-ship.width/2 * Math.cos(ship.angle) + ship.height/3 * Math.sin(ship.angle)),
+                        y: ship.pos.y + (-ship.width/2 * Math.sin(ship.angle) - ship.height/3 * Math.cos(ship.angle))
+                    };
+                    createThrusterParticles(
+                        worldPos.x, worldPos.y,
+                        ship.angle + Math.PI, 0.5, 1,
+                        30, 'rgba(255, 150, 50'
+                    );
+                } else { // Rotating counter-clockwise
+                    // Top thruster
+                    ctx.beginPath();
+                    ctx.moveTo(-ship.width/2, -ship.height/3);
+                    ctx.lineTo(-ship.width/2 - thrustLength, -ship.height/3);
+                    ctx.strokeStyle = '#f70';
+                    ctx.stroke();
+
+                    // Add particles
+                    const worldPos = {
+                        x: ship.pos.x + (-ship.width/2 * Math.cos(ship.angle) - ship.height/3 * Math.sin(ship.angle)),
+                        y: ship.pos.y + (-ship.width/2 * Math.sin(ship.angle) + ship.height/3 * Math.cos(ship.angle))
+                    };
+                    createThrusterParticles(
+                        worldPos.x, worldPos.y,
+                        ship.angle + Math.PI, 0.5, 1,
+                        30, 'rgba(255, 150, 50'
+                    );
+                }
+            }
+
+            // Draw turrets
+            for (const turret of ship.turrets) {
+                ctx.save();
+                // Position turret on side of ship
+                ctx.translate(turretOffset.x * turret.side, turretOffset.y * turret.side);
+                ctx.rotate(turret.angle);
+
+                // Draw turret base
+                ctx.beginPath();
+                ctx.arc(0, 0, 4, 0, Math.PI * 2);
+                ctx.strokeStyle = '#0f0';
+                ctx.stroke();
+
+                // Draw turret barrel
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(8, 0);
+                ctx.strokeStyle = '#0f0';
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            if (ship.thrusting) {
+                ctx.beginPath();
+                ctx.moveTo(-ship.width/2, 0);
+                ctx.lineTo(-ship.width/2 - 10, -5);
+                ctx.lineTo(-ship.width/2 - 15, 0);
+                ctx.lineTo(-ship.width/2 - 10, 5);
+                ctx.closePath();
+                ctx.strokeStyle = '#f70';
+                ctx.stroke();
+
+                // Add main thruster particles
+                const thrustX = ship.pos.x - Math.cos(ship.angle) * ship.width/2;
+                const thrustY = ship.pos.y - Math.sin(ship.angle) * ship.width/2;
+                createThrusterParticles(
+                    thrustX, thrustY,
+                    ship.angle + Math.PI,
+                    0.3,
+                    3,
+                    100,
+                    'rgba(255, 100, 0'
+                );
+            }
+
+            ctx.restore();
+
+            // Draw projectiles
+            ctx.fillStyle = '#ff0';
+            for (const proj of ship.projectiles) {
+                ctx.beginPath();
+                ctx.arc(proj.x, proj.y, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw asteroids
+            for (const asteroid of asteroids) {
+                ctx.save();
+                ctx.translate(asteroid.pos.x, asteroid.pos.y);
+                ctx.rotate(asteroid.rotation);
+
+                ctx.beginPath();
+                ctx.moveTo(asteroid.vertices[0].x, asteroid.vertices[0].y);
+                for (let i = 1; i < asteroid.vertices.length; i++) {
+                    ctx.lineTo(asteroid.vertices[i].x, asteroid.vertices[i].y);
+                }
+                ctx.closePath();
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            // Draw laser
+            if (ship.firing) {
+                ctx.beginPath();
+                ctx.moveTo(ship.pos.x, ship.pos.y);
+                ctx.lineTo(
+                    ship.pos.x + Math.cos(ship.angle) * laserRange,
+                    ship.pos.y + Math.sin(ship.angle) * laserRange
+                );
+                ctx.strokeStyle = '#f00';
+                ctx.lineWidth = laserWidth;
+                ctx.stroke();
+
+                // Add glow effect
+                ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+                ctx.lineWidth = laserWidth * 3;
+                ctx.stroke();
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            updateAI();
+            updatePhysics();
+            updateParticles();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start game
+        gameLoop();
+    </script>
+</body>
+</html>

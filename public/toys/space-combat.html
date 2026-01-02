@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="description" content="A space fleet combat simulation featuring two opposing teams with squadron-based tactics and realistic ship damage mechanics">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        canvas {
+            border: 1px solid #333;
+        }
+        #score {
+            position: absolute;
+            top: 20px;
+            color: white;
+            font-family: monospace;
+            font-size: 20px;
+            text-align: center;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Blue Fleet: 0 | Red Fleet: 0</div>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+
+        canvas.width = 800;
+        canvas.height = 600;
+
+        const BLUE_TEAM = 0;
+        const RED_TEAM = 1;
+
+        let score = {
+            [BLUE_TEAM]: 0,
+            [RED_TEAM]: 0
+        };
+
+        class Vector2 {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+            }
+
+            add(v) {
+                return new Vector2(this.x + v.x, this.y + v.y);
+            }
+
+            subtract(v) {
+                return new Vector2(this.x - v.x, this.y - v.y);
+            }
+
+            multiply(scalar) {
+                return new Vector2(this.x * scalar, this.y * scalar);
+            }
+
+            length() {
+                return Math.sqrt(this.x * this.x + this.y * this.y);
+            }
+
+            normalize() {
+                const len = this.length();
+                if (len === 0) return new Vector2(0, 0);
+                return new Vector2(this.x / len, this.y / len);
+            }
+        }
+
+        class Ship {
+            constructor(position, team) {
+                this.position = position;
+                this.team = team;
+                this.velocity = new Vector2(0, 0);
+                this.rotation = team === BLUE_TEAM ? 0 : Math.PI;  // Start facing the enemy
+                this.angularVelocity = 0;
+                this.target = null;
+                this.health = 500//250; // Increased health
+                this.weaponCooldown = 0;
+                this.size = 15;
+                this.weaponType = 'laser'//Math.random() < 0.3 ? 'laser' : 'projectile';
+                // Add left and right weapon cooldowns for broadsides
+                this.leftWeaponCooldown = 0;
+                this.rightWeaponCooldown = 0;
+            }
+
+            update(dt, ships) {
+                // Find nearest enemy
+                let nearestEnemy = null;
+                let minDist = Infinity;
+                
+                for (const ship of ships) {
+                    if (ship.team !== this.team) {
+                        const dist = ship.position.subtract(this.position).length();
+                        if (dist < minDist) {
+                            minDist = dist;
+                            nearestEnemy = ship;
+                        }
+                    }
+                }
+
+                this.target = nearestEnemy;
+
+                if (this.target) {
+                    const toTarget = this.target.position.subtract(this.position);
+                    const dist = toTarget.length();
+                    
+                    // Calculate desired facing angle for movement
+                    const targetAngle = Math.atan2(toTarget.y, toTarget.x);
+                    let angleDiff = targetAngle - this.rotation;
+                    
+                    // Normalize angle difference to [-PI, PI]
+                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+                    // Add orbital behavior
+                    let desiredAngle = targetAngle;
+                    if (dist < 180) {
+                        // Add 90 degrees (PI/2) to orbit counterclockwise
+                        desiredAngle += Math.PI / 2;
+                        // Reverse direction based on team to create opposing orbits
+                        // if (this.team === RED_TEAM) {
+                        //     desiredAngle -= Math.PI;
+                        // }
+                    }
+                    
+                    // Calculate new angle difference for orbital movement
+                    let orbitAngleDiff = desiredAngle - this.rotation;
+                    while (orbitAngleDiff > Math.PI) orbitAngleDiff -= Math.PI * 2;
+                    while (orbitAngleDiff < -Math.PI) orbitAngleDiff += Math.PI * 2;
+                    
+                    // Apply angular acceleration
+                    const targetAngularVel = orbitAngleDiff * 2;
+                    const angularAccel = (targetAngularVel - this.angularVelocity) * 5 * dt;
+                    this.angularVelocity += angularAccel;
+                    
+                    // Apply angular dampening
+                    this.angularVelocity *= 0.95;
+                    this.rotation += this.angularVelocity * dt;
+                    
+                    // Always move forward, but adjust speed based on distance
+                    const forwardDir = new Vector2(Math.cos(this.rotation), Math.sin(this.rotation));
+                    const desiredSpeed = dist < 150 ? 60 : (dist < 200 ? 80 : 100);
+                    const desiredVelocity = forwardDir.multiply(desiredSpeed);
+                    
+                    // Limit maximum acceleration
+                    const acceleration = desiredVelocity.subtract(this.velocity).multiply(dt);
+                    const maxAccel = 150 * dt;
+                    const accelLength = acceleration.length();
+                    
+                    if (accelLength > maxAccel) {
+                        acceleration.x = (acceleration.x / accelLength) * maxAccel;
+                        acceleration.y = (acceleration.y / accelLength) * maxAccel;
+                    }
+                    
+                    this.accelFactor = accelLength / maxAccel;
+
+                    this.velocity = this.velocity.add(acceleration);
+                    
+                    // Add dampening to prevent oscillation
+                    this.velocity = this.velocity.multiply(0.98);
+                    
+                    // Check firing angles for broadsides
+                    const relativeAngle = Math.abs(angleDiff);
+                    if (relativeAngle > Math.PI/3 && relativeAngle < 2*Math.PI/3) {
+                        // We're showing our broadside to the target
+                        const firingLeft = angleDiff > 0;
+                        
+                        if (firingLeft && this.leftWeaponCooldown <= 0) {
+                            // Fire left broadside
+                            const perpendicular = new Vector2(-Math.sin(this.rotation), Math.cos(this.rotation));
+                            // const projectileVel = perpendicular.multiply(this.weaponType === 'laser' ? 500 : 300);
+                            const projectileVel = toTarget.normalize().multiply(this.weaponType === 'laser' ? 500 : 300);
+                            projectiles.push(new Projectile(
+                                this.position.add(perpendicular.multiply(this.size)),
+                                projectileVel,
+                                this.team,
+                                this.weaponType
+                            ));
+                            this.leftWeaponCooldown = 0.3//this.weaponType === 'laser' ? 0.5 : 0.3;
+                        } else if (!firingLeft && this.rightWeaponCooldown <= 0) {
+                            // Fire right broadside
+                            const perpendicular = new Vector2(Math.sin(this.rotation), -Math.cos(this.rotation));
+                            // const projectileVel = perpendicular.multiply(this.weaponType === 'laser' ? 500 : 300);
+                            const projectileVel = toTarget.normalize().multiply(this.weaponType === 'laser' ? 500 : 300);
+                            projectiles.push(new Projectile(
+                                this.position.add(perpendicular.multiply(this.size)),
+                                projectileVel,
+                                this.team,
+                                this.weaponType
+                            ));
+                            this.rightWeaponCooldown = 0.3//this.weaponType === 'laser' ? 0.5 : 0.3;
+                        }
+                    }
+                    
+                    // Update weapon cooldowns
+                    this.leftWeaponCooldown -= dt;
+                    this.rightWeaponCooldown -= dt;
+
+                    // Fire weapon
+                    if (false) {//this.weaponCooldown <= 0 && dist < 250) {
+                        if (this.weaponType === 'laser') {
+                            projectiles.push(new Projectile(
+                                this.position,
+                                toTarget.normalize().multiply(500),
+                                this.team,
+                                'laser'
+                            ));
+                            this.weaponCooldown = 0.5;
+                        } else {
+                            projectiles.push(new Projectile(
+                                this.position,
+                                toTarget.normalize().multiply(300),
+                                this.team,
+                                'projectile'
+                            ));
+                            this.weaponCooldown = 0.3;
+                        }
+                    }
+                }
+
+                this.position = this.position.add(this.velocity.multiply(dt));
+                this.weaponCooldown -= dt;
+
+                // Boundary checking
+                if (this.position.x < 0) this.position.x = 0;
+                if (this.position.x > canvas.width) this.position.x = canvas.width;
+                if (this.position.y < 0) this.position.y = 0;
+                if (this.position.y > canvas.height) this.position.y = canvas.height;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.position.x, this.position.y);
+                ctx.rotate(this.rotation);
+
+                // Draw ship with damage representation
+                ctx.beginPath();
+                ctx.moveTo(this.size, 0);
+                ctx.lineTo(-this.size, -this.size/2);
+                ctx.lineTo(-this.size, this.size/2);
+                ctx.closePath();
+                
+                // Solid base color
+                ctx.fillStyle = this.team === BLUE_TEAM ? '#4444ff' : '#ff4444';
+                ctx.fill();
+                
+                // Draw engine glow
+                ctx.beginPath();
+                const glowSize = this.size * 0.4;
+                ctx.moveTo(-this.size, -this.size/4);
+                ctx.lineTo(-this.size - glowSize, 0);
+                ctx.lineTo(-this.size, this.size/4);
+                ctx.closePath();
+                
+                const engineColor = this.team === BLUE_TEAM ? '88, 88, 255' : '255, 88, 88';
+                const engineAlpha = 0.5 + (this.accelFactor);
+                ctx.fillStyle = `rgba(${engineColor}, ${engineAlpha})`;
+                ctx.fill();
+
+                // Draw subtle damage cracks
+                if (this.health < 200) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = this.team === BLUE_TEAM ? '#2222dd' : '#dd2222';
+                    ctx.lineWidth = 0.5;
+                    
+                    // Calculate number of cracks based on damage
+                    const numCracks = Math.floor((200 - this.health) / 15);
+                    for (let i = 0; i < numCracks; i++) {
+                        // Use consistent random positions based on ship's position
+                        const randSeed = (this.position.x + this.position.y + i) * 0.1;
+                        const startX = -this.size/2 + (Math.sin(randSeed) + 1) * this.size;
+                        const startY = -this.size/2 + (Math.cos(randSeed) + 1) * this.size;
+                        
+                        // Create a small branching crack
+                        ctx.moveTo(startX, startY);
+                        const angle = Math.sin(randSeed * 2) * Math.PI;
+                        const length = this.size * 0.3;
+                        ctx.lineTo(
+                            startX + Math.cos(angle) * length,
+                            startY + Math.sin(angle) * length
+                        );
+                        
+                        // Add a small branch
+                        const branchAngle = angle + Math.PI/4;
+                        const branchLength = length * 0.6;
+                        ctx.moveTo(
+                            startX + Math.cos(angle) * length * 0.6,
+                            startY + Math.sin(angle) * length * 0.6
+                        );
+                        ctx.lineTo(
+                            startX + Math.cos(angle) * length * 0.6 + Math.cos(branchAngle) * branchLength,
+                            startY + Math.sin(angle) * length * 0.6 + Math.sin(branchAngle) * branchLength
+                        );
+                    }
+                    ctx.stroke();
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        class Projectile {
+            constructor(position, velocity, team, type) {
+                this.position = position;
+                this.velocity = velocity;
+                this.team = team;
+                this.type = type;
+                this.lifetime = 2//type === 'laser' ? 0.5 : 2;
+                this.damage = type === 'laser' ? 15 : 25;
+            }
+
+            update(dt) {
+                this.position = this.position.add(this.velocity.multiply(dt));
+                this.lifetime -= dt;
+                return this.lifetime > 0;
+            }
+
+            draw() {
+                ctx.beginPath();
+                if (this.type === 'laser') {
+                    ctx.strokeStyle = this.team === BLUE_TEAM ? '#8888ff' : '#ff8888';
+                    ctx.lineWidth = 2;
+                    const back = this.position.subtract(this.velocity.normalize().multiply(20));
+                    ctx.moveTo(this.position.x, this.position.y);
+                    ctx.lineTo(back.x, back.y);
+                    ctx.stroke();
+                } else {
+                    ctx.fillStyle = this.team === BLUE_TEAM ? '#4444ff' : '#ff4444';
+                    ctx.arc(this.position.x, this.position.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        class Particle {
+            constructor(position, velocity, color) {
+                this.position = position;
+                this.velocity = velocity;
+                this.color = color;
+                this.lifetime = 1;
+                this.initialLifetime = 1;
+            }
+
+            update(dt) {
+                this.position = this.position.add(this.velocity.multiply(dt));
+                this.lifetime -= dt;
+                return this.lifetime > 0;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.lifetime / this.initialLifetime;
+                ctx.arc(this.position.x, this.position.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        let ships = [];
+        let projectiles = [];
+        let particles = [];
+        let lastTime = 0;
+        let gameResetting = false;
+
+        function spawnShips() {
+            ships = [];
+            // Spawn ships in loose formations with randomization
+            for (let i = 0; i < 5; i++) {
+                const baseY = canvas.height/2 + (i - 2) * 60;
+                const randRadius = 40;
+                
+                // Blue team - left side, loosely clustered
+                ships.push(new Ship(
+                    new Vector2(
+                        150 + (Math.random() - 0.5) * randRadius,
+                        baseY + (Math.random() - 0.5) * randRadius
+                    ),
+                    BLUE_TEAM
+                ));
+                
+                // Red team - right side, loosely clustered
+                ships.push(new Ship(
+                    new Vector2(
+                        canvas.width - 150 + (Math.random() - 0.5) * randRadius,
+                        baseY + (Math.random() - 0.5) * randRadius
+                    ),
+                    RED_TEAM
+                ));
+            }
+        }
+
+        function createExplosion(position, color) {
+            for (let i = 0; i < 10; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 50 + Math.random() * 100;
+                particles.push(new Particle(
+                    position,
+                    new Vector2(Math.cos(angle) * speed, Math.sin(angle) * speed),
+                    color
+                ));
+            }
+        }
+
+        function checkCollisions() {
+            for (const projectile of projectiles) {
+                for (const ship of ships) {
+                    if (projectile.team !== ship.team) {
+                        const dist = ship.position.subtract(projectile.position).length();
+                        if (dist < ship.size) {
+                            ship.health -= projectile.damage;
+                            projectile.lifetime = 0;
+                            
+                            if (ship.health <= 0) {
+                                createExplosion(
+                                    ship.position,
+                                    ship.team === BLUE_TEAM ? '#4444ff' : '#ff4444'
+                                );
+                                score[projectile.team]++;
+                                ships = ships.filter(s => s !== ship);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function update(currentTime) {
+            const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
+            lastTime = currentTime;
+
+            // Check if match is over
+            const blueLiving = ships.some(ship => ship.team === BLUE_TEAM);
+            const redLiving = ships.some(ship => ship.team === RED_TEAM);
+            
+            if (!blueLiving || !redLiving) {
+                if (!gameResetting) {
+                    gameResetting = true;
+                    setTimeout(() => {
+                        // Clear all entities
+                        projectiles = [];
+                        particles = [];
+                        // Start new match
+                        spawnShips();
+                        gameResetting = false;
+                    }, 2000);
+                }
+            }
+
+            // Update all entities
+            ships.forEach(ship => ship.update(dt, ships));
+            projectiles = projectiles.filter(proj => proj.update(dt));
+            particles = particles.filter(particle => particle.update(dt));
+            
+            checkCollisions();
+
+            // Update score display
+            scoreElement.textContent = `Blue Fleet: ${score[BLUE_TEAM]} | Red Fleet: ${score[RED_TEAM]}`;
+
+            // Clear and draw
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            particles.forEach(particle => particle.draw());
+            projectiles.forEach(proj => proj.draw());
+            ships.forEach(ship => ship.draw());
+
+            requestAnimationFrame(update);
+        }
+
+        spawnShips();
+        requestAnimationFrame(update);
+    </script>
+</body>
+</html>

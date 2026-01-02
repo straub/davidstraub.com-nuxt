@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Baby Escape Prevention Game</title>
+    <meta name="description" content="A game where you place obstacles to prevent a baby from escaping">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        #gameContainer {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            background: #fff;
+            border: 2px solid #333;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            touch-action: none;
+        }
+        #gameStats {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 100;
+        }
+        #instructions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            max-width: 250px;
+            z-index: 100;
+        }
+        .obstacle {
+            position: absolute;
+            background-size: contain;
+            background-repeat: no-repeat;
+            cursor: move;
+            user-select: none;
+            z-index: 10;
+            border: 1px dashed rgba(0,0,0,0.3); /* Light dashed border to show bounding box */
+        }
+        #baby {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            z-index: 5;
+            transform-origin: center;
+            border: 1px dashed rgba(255,0,0,0.5); /* Red dashed border to show baby collision area */
+        }
+        #babyBody {
+            position: absolute;
+            width: 25px;
+            height: 35px;
+            background-color: #ffccaa;
+            border-radius: 15px;
+            top: 0;
+            left: 5px;
+        }
+        #babyHead {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background-color: #ffccaa;
+            border-radius: 50%;
+            top: -8px;
+            left: 6px;
+            transform-origin: center bottom;
+        }
+        .babyEye {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background-color: #000;
+            border-radius: 50%;
+            top: 5px;
+        }
+        #babyLeftEye {
+            left: 6px;
+        }
+        #babyRightEye {
+            left: 15px;
+        }
+        #babyMouth {
+            position: absolute;
+            width: 8px;
+            height: 4px;
+            border-bottom: 2px solid #000;
+            border-radius: 50%;
+            top: 12px;
+            left: 8px;
+        }
+        .babyLimb {
+            position: absolute;
+            width: 13px;
+            height: 5px;
+            background-color: #ffccaa;
+            border-radius: 3px;
+        }
+        #babyLeftArm, #babyRightArm {
+            top: 5px;
+        }
+        #babyLeftLeg, #babyRightLeg {
+            bottom: 0;
+        }
+        .exit {
+            position: absolute;
+            background: #ffdddd;
+            opacity: 0.7;
+            z-index: 1;
+            border: 1px dashed rgba(255,0,0,0.5); /* Red dashed border to show exit area */
+        }
+        .win-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.9);
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 24px;
+            text-align: center;
+            z-index: 100;
+            display: none;
+        }
+        .path-visualization {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background-color: rgba(0, 200, 255, 0.4);
+            border-radius: 50%;
+            z-index: 3;
+            pointer-events: none;
+        }
+        .line-of-sight {
+            position: absolute;
+            height: 2px;
+            background-color: rgba(255, 100, 100, 0.4);
+            transform-origin: left center;
+            z-index: 2;
+            pointer-events: none;
+        }
+        button {
+            margin-top: 15px;
+            padding: 8px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #toggleVisualization {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 12px;
+            background: #4285f4;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="gameStats">Time: <span id="timer">0</span>s</div>
+        <div id="instructions">
+            Drag furniture to block the baby from escaping! The baby will try to find exits on the edges of the room.
+        </div>
+        <div id="baby">
+            <div id="babyBody"></div>
+            <div id="babyHead">
+                <div id="babyLeftEye" class="babyEye"></div>
+                <div id="babyRightEye" class="babyEye"></div>
+                <div id="babyMouth"></div>
+            </div>
+            <div id="babyLeftArm" class="babyLimb"></div>
+            <div id="babyRightArm" class="babyLimb"></div>
+            <div id="babyLeftLeg" class="babyLimb"></div>
+            <div id="babyRightLeg" class="babyLimb"></div>
+        </div>
+        <div id="winMessage" class="win-message">
+            <p id="winText"></p>
+            <button id="restartButton">Play Again</button>
+        </div>
+        <button id="toggleVisualization">Show Path</button>
+    </div>
+
+    <script>
+        const gameContainer = document.getElementById('gameContainer');
+        const baby = document.getElementById('baby');
+        const timer = document.getElementById('timer');
+        const winMessage = document.getElementById('winMessage');
+        const winText = document.getElementById('winText');
+        const restartButton = document.getElementById('restartButton');
+        const toggleVisualizationBtn = document.getElementById('toggleVisualization');
+
+        // Game configuration
+        const GRID_SIZE = 10; // Size of grid for pathfinding (smaller for more movement options)
+        const OBSTACLE_COUNT = 15; // More obstacles for added challenge
+        const BABY_SPEED = 50; // Pixels per second
+        const THINKING_TIME = 1; // Seconds between recalculating path
+        const ROOM_WIDTH = gameContainer.offsetWidth;
+        const ROOM_HEIGHT = gameContainer.offsetHeight;
+
+        // Game state
+        let gameRunning = true;
+        let gameTime = 0;
+        let obstacles = [];
+        let exits = [];
+        let babyPos = { x: ROOM_WIDTH / 2, y: ROOM_HEIGHT / 2 }; // Start in center
+        let babyRotation = 90; // Initial rotation (facing up)
+        let babyTargetRotation = 90; // Target rotation for smooth transitions
+        let babyRotationSpeed = 180; // Degrees per second
+        let babyPath = [];
+        let lastPathUpdate = 0;
+        let grid = [];
+        let showVisualization = false;
+        let pathVisuals = [];
+        let lineOfSightVisuals = [];
+
+        // Obstacle types with their dimensions
+        const obstacleTypes = [
+            {
+                type: 'chair',
+                width: 40, height: 42, // Tightened bounding box
+                image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="20" y="20" width="60" height="10" fill="%23a67c52"/><rect x="25" y="30" width="50" height="40" fill="%23a67c52"/><rect x="20" y="70" width="60" height="5" fill="%23a67c52"/><rect x="25" y="75" width="5" height="15" fill="%23a67c52"/><rect x="70" y="75" width="5" height="15" fill="%23a67c52"/></svg>'
+            },
+            {
+                type: 'table',
+                width: 90, height: 55, // Tightened bounding box
+                image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="10" y="30" width="80" height="10" fill="%23a67c52"/><rect x="20" y="40" width="60" height="5" fill="%23a67c52"/><rect x="25" y="45" width="5" height="40" fill="%23a67c52"/><rect x="70" y="45" width="5" height="40" fill="%23a67c52"/></svg>'
+            },
+            {
+                type: 'toy',
+                width: 40, height: 40, // Already accurate
+                image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%234285f4"/><circle cx="50" cy="50" r="30" fill="%23ea4335"/><circle cx="50" cy="50" r="20" fill="%23fbbc05"/><circle cx="50" cy="50" r="10" fill="%2334a853"/></svg>'
+            },
+            {
+                type: 'sofa',
+                width: 100, height: 45, // Tightened bounding box
+                image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="10" y="40" width="80" height="30" fill="%238676b6"/><rect x="10" y="30" width="80" height="10" fill="%237b6dad"/><rect x="5" y="40" width="5" height="30" fill="%237b6dad"/><rect x="90" y="40" width="5" height="30" fill="%237b6dad"/><rect x="10" y="70" width="80" height="5" fill="%238676b6"/></svg>'
+            },
+            {
+                type: 'plant',
+                width: 35, height: 70, // Tightened bounding box
+                image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="40" y="70" width="20" height="20" fill="%23a67c52"/><path d="M50,10 Q30,30 40,50 Q20,40 30,70" stroke="%2334a853" stroke-width="5" fill="none"/><path d="M50,10 Q70,30 60,50 Q80,40 70,70" stroke="%2334a853" stroke-width="5" fill="none"/></svg>'
+            },
+            {
+                type: 'box',
+                width: 45, height: 45, // Tightened bounding box
+                image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="10" y="20" width="80" height="60" fill="%23d4a76a"/><line x1="10" y1="20" x2="90" y2="80" stroke="%23b58c50" stroke-width="2"/><line x1="10" y1="80" x2="90" y2="20" stroke="%23b58c50" stroke-width="2"/></svg>'
+            }
+        ];
+
+        // Create exits (doorways or other escape routes) on edges
+        function createExits() {
+            const exitSize = 80;
+            exits = [
+                { x: 0, y: ROOM_HEIGHT / 2 - exitSize / 2, width: 10, height: exitSize, direction: 'left' },
+                { x: ROOM_WIDTH - 10, y: ROOM_HEIGHT / 2 - exitSize / 2, width: 10, height: exitSize, direction: 'right' },
+                { x: ROOM_WIDTH / 2 - exitSize / 2, y: 0, width: exitSize, height: 10, direction: 'top' },
+                { x: ROOM_WIDTH / 2 - exitSize / 2, y: ROOM_HEIGHT - 10, width: exitSize, height: 10, direction: 'bottom' }
+            ];
+
+            exits.forEach(exit => {
+                const exitEl = document.createElement('div');
+                exitEl.className = 'exit';
+                exitEl.style.left = exit.x + 'px';
+                exitEl.style.top = exit.y + 'px';
+                exitEl.style.width = exit.width + 'px';
+                exitEl.style.height = exit.height + 'px';
+                gameContainer.appendChild(exitEl);
+            });
+        }
+
+        // Create random obstacles
+        function createObstacles() {
+            for (let i = 0; i < OBSTACLE_COUNT; i++) {
+                const obstacleType = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+
+                // Find position that doesn't collide with baby starting position or other obstacles
+                let validPos = false;
+                let obstacle;
+
+                while (!validPos) {
+                    const x = Math.random() * (ROOM_WIDTH - obstacleType.width);
+                    const y = Math.random() * (ROOM_HEIGHT - obstacleType.height);
+
+                    // Check if too close to baby's starting position
+                    const distToBaby = Math.sqrt(
+                        Math.pow((x + obstacleType.width/2) - babyPos.x, 2) +
+                        Math.pow((y + obstacleType.height/2) - babyPos.y, 2)
+                    );
+
+                    if (distToBaby < 100) continue;
+
+                    // Check collision with other obstacles
+                    let collision = false;
+                    for (const otherObstacle of obstacles) {
+                        if (
+                            x < otherObstacle.x + otherObstacle.width &&
+                            x + obstacleType.width > otherObstacle.x &&
+                            y < otherObstacle.y + otherObstacle.height &&
+                            y + obstacleType.height > otherObstacle.y
+                        ) {
+                            collision = true;
+                            break;
+                        }
+                    }
+
+                    if (!collision) {
+                        obstacle = {
+                            x,
+                            y,
+                            width: obstacleType.width,
+                            height: obstacleType.height,
+                            type: obstacleType.type,
+                            image: obstacleType.image
+                        };
+                        validPos = true;
+                    }
+                }
+
+                obstacles.push(obstacle);
+
+                const obstacleEl = document.createElement('div');
+                obstacleEl.className = 'obstacle';
+                obstacleEl.id = 'obstacle_' + i;
+                obstacleEl.style.left = obstacle.x + 'px';
+                obstacleEl.style.top = obstacle.y + 'px';
+                obstacleEl.style.width = obstacle.width + 'px';
+                obstacleEl.style.height = obstacle.height + 'px';
+                obstacleEl.style.backgroundImage = `url('${obstacle.image}')`;
+                obstacleEl.setAttribute('data-index', i);
+                gameContainer.appendChild(obstacleEl);
+
+                // Make obstacles draggable
+                makeDraggable(obstacleEl);
+            }
+        }
+
+        // Setup drag functionality for obstacles
+        function makeDraggable(element) {
+            let offsetX, offsetY;
+
+            element.addEventListener('mousedown', dragStart);
+            element.addEventListener('touchstart', dragStart, { passive: false });
+
+            function dragStart(e) {
+                e.preventDefault();
+
+                // Get the initial position
+                if (e.type === 'touchstart') {
+                    offsetX = e.touches[0].clientX - element.getBoundingClientRect().left;
+                    offsetY = e.touches[0].clientY - element.getBoundingClientRect().top;
+                } else {
+                    offsetX = e.clientX - element.getBoundingClientRect().left;
+                    offsetY = e.clientY - element.getBoundingClientRect().top;
+                }
+
+                // Add move and end event listeners
+                document.addEventListener('mousemove', dragMove);
+                document.addEventListener('touchmove', dragMove, { passive: false });
+                document.addEventListener('mouseup', dragEnd);
+                document.addEventListener('touchend', dragEnd);
+
+                // Bring to front
+                element.style.zIndex = '20';
+            }
+
+            function dragMove(e) {
+                e.preventDefault();
+
+                let clientX, clientY;
+                if (e.type === 'touchmove') {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+
+                // Calculate the new position
+                const containerRect = gameContainer.getBoundingClientRect();
+                let newLeft = clientX - containerRect.left - offsetX;
+                let newTop = clientY - containerRect.top - offsetY;
+
+                const index = parseInt(element.getAttribute('data-index'));
+                const obstacleWidth = obstacles[index].width;
+                const obstacleHeight = obstacles[index].height;
+
+                // Keep within bounds
+                newLeft = Math.max(0, Math.min(ROOM_WIDTH - obstacleWidth, newLeft));
+                newTop = Math.max(0, Math.min(ROOM_HEIGHT - obstacleHeight, newTop));
+
+                // Check for collision with baby
+                const babyRadius = 20; // Baby collision radius (tightened)
+                const obstacleCenterX = newLeft + obstacleWidth / 2;
+                const obstacleCenterY = newTop + obstacleHeight / 2;
+                const distance = Math.sqrt(
+                    Math.pow(obstacleCenterX - babyPos.x, 2) +
+                    Math.pow(obstacleCenterY - babyPos.y, 2)
+                );
+
+                // If obstacle would be placed on top of baby, don't allow it
+                if (distance < babyRadius + Math.min(obstacleWidth, obstacleHeight) / 2) {
+                    return;
+                }
+
+                // Update position
+                element.style.left = newLeft + 'px';
+                element.style.top = newTop + 'px';
+
+                // Update obstacle data
+                obstacles[index].x = newLeft;
+                obstacles[index].y = newTop;
+
+                // Recalculate pathfinding grid
+                updateGrid();
+            }
+
+            function dragEnd() {
+                document.removeEventListener('mousemove', dragMove);
+                document.removeEventListener('touchmove', dragMove);
+                document.removeEventListener('mouseup', dragEnd);
+                document.removeEventListener('touchend', dragEnd);
+
+                // Reset z-index
+                element.style.zIndex = '10';
+
+                // Check if baby is trapped
+                checkBabyTrapped();
+            }
+        }
+
+        // Initialize pathfinding grid
+        function initGrid() {
+            grid = Array(Math.ceil(ROOM_HEIGHT / GRID_SIZE))
+                .fill()
+                .map(() => Array(Math.ceil(ROOM_WIDTH / GRID_SIZE)).fill(1));
+
+            updateGrid();
+        }
+
+        // Update grid with obstacles
+        function updateGrid() {
+            // Reset grid
+            for (let y = 0; y < grid.length; y++) {
+                for (let x = 0; x < grid[0].length; x++) {
+                    grid[y][x] = 1; // Walkable
+                }
+            }
+
+            // Mark obstacles as non-walkable with a small buffer zone
+            obstacles.forEach(obstacle => {
+                // Add a small buffer (half a grid cell) around obstacles to prevent getting too close
+                const buffer = GRID_SIZE / 2;
+                const startX = Math.max(0, Math.floor((obstacle.x - buffer) / GRID_SIZE));
+                const startY = Math.max(0, Math.floor((obstacle.y - buffer) / GRID_SIZE));
+                const endX = Math.min(Math.ceil((obstacle.x + obstacle.width + buffer) / GRID_SIZE), grid[0].length);
+                const endY = Math.min(Math.ceil((obstacle.y + obstacle.height + buffer) / GRID_SIZE), grid.length);
+
+                for (let y = startY; y < endY; y++) {
+                    for (let x = startX; x < endX; x++) {
+                        if (y >= 0 && y < grid.length && x >= 0 && x < grid[0].length) {
+                            // Make sure we're not marking the baby's position as non-walkable
+                            const babyGridX = Math.floor(babyPos.x / GRID_SIZE);
+                            const babyGridY = Math.floor(babyPos.y / GRID_SIZE);
+
+                            if (x !== babyGridX || y !== babyGridY) {
+                                grid[y][x] = 0; // Not walkable
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Handle edge case: If baby is currently in a cell marked unwalkable,
+            // make sure its current position is walkable so it doesn't get stuck
+            const babyGridX = Math.floor(babyPos.x / GRID_SIZE);
+            const babyGridY = Math.floor(babyPos.y / GRID_SIZE);
+
+            if (babyGridX >= 0 && babyGridX < grid[0].length &&
+                babyGridY >= 0 && babyGridY < grid.length) {
+                grid[babyGridY][babyGridX] = 1; // Always make baby's current position walkable
+            }
+        }
+
+        // Check if there is line of sight between two points
+        function lineOfSight(x0, y0, x1, y1) {
+            // Bresenham's line algorithm to check if there's a clear line of sight
+            let dx = Math.abs(x1 - x0);
+            let dy = Math.abs(y1 - y0);
+            let sx = (x0 < x1) ? 1 : -1;
+            let sy = (y0 < y1) ? 1 : -1;
+            let err = dx - dy;
+
+            while (x0 !== x1 || y0 !== y1) {
+                // If any point along the line is blocked, return false
+                if (x0 >= 0 && x0 < grid[0].length && y0 >= 0 && y0 < grid.length) {
+                    if (grid[y0][x0] === 0) {
+                        return false;
+                    }
+                } else {
+                    return false; // Out of bounds
+                }
+
+                let e2 = 2 * err;
+                if (e2 > -dy) {
+                    err -= dy;
+                    x0 += sx;
+                }
+                if (e2 < dx) {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+
+            return true;
+        }
+
+        // Standard A* pathfinding with post-processing for smoothing
+        function findPath(startX, startY, targetX, targetY) {
+            // Convert to grid coordinates
+            startX = Math.floor(startX / GRID_SIZE);
+            startY = Math.floor(startY / GRID_SIZE);
+            targetX = Math.floor(targetX / GRID_SIZE);
+            targetY = Math.floor(targetY / GRID_SIZE);
+
+            // Ensure coordinates are within bounds
+            startX = Math.max(0, Math.min(grid[0].length - 1, startX));
+            startY = Math.max(0, Math.min(grid.length - 1, startY));
+            targetX = Math.max(0, Math.min(grid[0].length - 1, targetX));
+            targetY = Math.max(0, Math.min(grid.length - 1, targetY));
+
+            // Check if starting or target positions are blocked
+            if (grid[startY][startX] === 0 || grid[targetY][targetX] === 0) {
+                return null;
+            }
+
+            // The set of nodes already evaluated
+            const closedSet = new Set();
+
+            // The set of currently discovered nodes that are not evaluated yet
+            const openSet = [{ x: startX, y: startY }];
+
+            // For each node, which node it can most efficiently be reached from
+            const cameFrom = {};
+
+            // For each node, the cost of getting from the start node to that node
+            const gScore = {};
+            gScore[`${startX},${startY}`] = 0;
+
+            // For each node, the total cost of getting from the start node to the goal
+            const fScore = {};
+            fScore[`${startX},${startY}`] = heuristic(startX, startY, targetX, targetY);
+
+            while (openSet.length > 0) {
+                // Find the node in openSet having the lowest fScore value
+                let current = null;
+                let lowestFScore = Infinity;
+                let currentIndex = 0;
+
+                for (let i = 0; i < openSet.length; i++) {
+                    const node = openSet[i];
+                    const key = `${node.x},${node.y}`;
+                    if (fScore[key] < lowestFScore) {
+                        lowestFScore = fScore[key];
+                        current = node;
+                        currentIndex = i;
+                    }
+                }
+
+                // If we've reached the target
+                if (current.x === targetX && current.y === targetY) {
+                    // First build the raw path
+                    const rawPath = reconstructPath(cameFrom, current);
+                    // Then smooth it by applying line-of-sight optimization
+                    return smoothPath(rawPath);
+                }
+
+                // Remove current from openSet
+                openSet.splice(currentIndex, 1);
+                closedSet.add(`${current.x},${current.y}`);
+
+                // Check all neighboring nodes
+                const neighbors = [
+                    { x: current.x + 1, y: current.y },
+                    { x: current.x - 1, y: current.y },
+                    { x: current.x, y: current.y + 1 },
+                    { x: current.x, y: current.y - 1 },
+                    // Diagonals
+                    { x: current.x + 1, y: current.y + 1 },
+                    { x: current.x + 1, y: current.y - 1 },
+                    { x: current.x - 1, y: current.y + 1 },
+                    { x: current.x - 1, y: current.y - 1 },
+                ];
+
+                for (const neighbor of neighbors) {
+                    // Skip if out of bounds
+                    if (neighbor.x < 0 || neighbor.x >= grid[0].length ||
+                        neighbor.y < 0 || neighbor.y >= grid.length) {
+                        continue;
+                    }
+
+                    // Skip if obstacle or already evaluated
+                    if (grid[neighbor.y][neighbor.x] === 0 ||
+                        closedSet.has(`${neighbor.x},${neighbor.y}`)) {
+                        continue;
+                    }
+
+                    const neighborKey = `${neighbor.x},${neighbor.y}`;
+
+                    // Calculate cost for this neighbor
+                    const isDiagonal = neighbor.x !== current.x && neighbor.y !== current.y;
+                    const moveCost = isDiagonal ? 1.414 : 1; // Cost is higher for diagonal moves
+                    const tentativeGScore = gScore[`${current.x},${current.y}`] + moveCost;
+
+                    // Add to open set if not already there
+                    if (!openSet.some(node => node.x === neighbor.x && node.y === neighbor.y)) {
+                        openSet.push(neighbor);
+                    } else if (tentativeGScore >= (gScore[neighborKey] || Infinity)) {
+                        continue; // This is not a better path
+                    }
+
+                    // This path is the best until now. Record it!
+                    cameFrom[neighborKey] = current;
+                    gScore[neighborKey] = tentativeGScore;
+                    fScore[neighborKey] = tentativeGScore +
+                                         heuristic(neighbor.x, neighbor.y, targetX, targetY);
+                }
+            }
+
+            // If we get here, there is no path
+            return null;
+        }
+
+        // Euclidean distance heuristic
+        function heuristic(x1, y1, x2, y2) {
+            return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        }
+
+        // Reconstruct path from A* result
+        function reconstructPath(cameFrom, current) {
+            const path = [current];
+            let key = `${current.x},${current.y}`;
+
+            while (cameFrom[key]) {
+                current = cameFrom[key];
+                path.unshift(current);
+                key = `${current.x},${current.y}`;
+            }
+
+            return path;
+        }
+
+        // Smooth the path by removing unnecessary waypoints
+        function smoothPath(path) {
+            if (!path || path.length < 3) return path;
+
+            const smoothedPath = [path[0]];
+            let current = 0;
+
+            // Add parent field for visualization
+            path[0].parent = 0;
+
+            while (current < path.length - 1) {
+                // Look ahead as far as possible with line of sight
+                let furthest = current + 1;
+
+                for (let i = path.length - 1; i > current; i--) {
+                    if (lineOfSight(path[current].x, path[current].y, path[i].x, path[i].y)) {
+                        furthest = i;
+                        break;
+                    }
+                }
+
+                // Add the furthest visible node and its parent for visualization
+                path[furthest].parent = smoothedPath.length - 1;
+                smoothedPath.push(path[furthest]);
+                current = furthest;
+            }
+
+            return smoothedPath;
+        }
+
+        // Check if the baby has any path to an exit
+        function checkBabyTrapped() {
+            let hasPath = false;
+
+            // Check each exit
+            for (const exit of exits) {
+                // Find the center point of the exit
+                const exitX = exit.x + exit.width / 2;
+                const exitY = exit.y + exit.height / 2;
+
+                const path = findPath(babyPos.x, babyPos.y, exitX, exitY);
+                if (path !== null) {
+                    hasPath = true;
+                    break;
+                }
+            }
+
+            if (!hasPath && gameRunning) {
+                gameWin();
+            }
+
+            return !hasPath;
+        }
+
+        // Find the closest exit and path to it
+        function findClosestExit() {
+            let closestExit = null;
+            let closestPath = null;
+            let closestDistance = Infinity;
+
+            // Check path to each exit
+            for (const exit of exits) {
+                // Find the center point of the exit
+                const exitX = exit.x + exit.width / 2;
+                const exitY = exit.y + exit.height / 2;
+
+                const path = findPath(babyPos.x, babyPos.y, exitX, exitY);
+                if (path !== null) {
+                    // Calculate direct distance to exit
+                    const distance = Math.sqrt(
+                        Math.pow(exitX - babyPos.x, 2) +
+                        Math.pow(exitY - babyPos.y, 2)
+                    );
+
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestExit = exit;
+                        closestPath = path;
+                    }
+                }
+            }
+
+            return { exit: closestExit, path: closestPath };
+        }
+
+        // Update baby movement based on pathfinding
+        function updateBabyMovement(dt) {
+            if (!gameRunning) return;
+
+            // Always recalculate path if baby is stuck or has no path
+            const forcedRecalculation = babyPath.length === 0;
+
+            // Recalculate path periodically
+            lastPathUpdate += dt;
+            if (lastPathUpdate >= THINKING_TIME || forcedRecalculation) {
+                lastPathUpdate = 0;
+
+                // Update the grid to ensure accurate pathfinding
+                updateGrid();
+
+                const result = findClosestExit();
+
+                if (result.path && result.path.length > 0) {
+                    babyPath = result.path;
+
+                    // Update visualization if enabled
+                    if (showVisualization) {
+                        visualizePath(babyPath);
+                    }
+                } else {
+                    // If no path found, we'll check if the baby is truly trapped
+                    if (checkBabyTrapped()) {
+                        // Baby is truly trapped, path stays empty
+                        babyPath = [];
+                    } else {
+                        // Baby should have a path but can't find one
+                        // Try to move in a random direction to escape local minimum
+                        const randomDirection = Math.floor(Math.random() * 8);
+                        const directions = [
+                            {x: 1, y: 0}, {x: 1, y: 1}, {x: 0, y: 1}, {x: -1, y: 1},
+                            {x: -1, y: 0}, {x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}
+                        ];
+                        const babyGridX = Math.floor(babyPos.x / GRID_SIZE);
+                        const babyGridY = Math.floor(babyPos.y / GRID_SIZE);
+
+                        // Create a simple one-step path
+                        babyPath = [{
+                            x: babyGridX + directions[randomDirection].x,
+                            y: babyGridY + directions[randomDirection].y
+                        }];
+                    }
+                }
+            }
+
+            if (babyPath.length > 0) {
+                // Move towards next waypoint
+                const nextWaypoint = {
+                    x: babyPath[0].x * GRID_SIZE + GRID_SIZE / 2,
+                    y: babyPath[0].y * GRID_SIZE + GRID_SIZE / 2
+                };
+
+                const toWaypoint = {
+                    x: nextWaypoint.x - babyPos.x,
+                    y: nextWaypoint.y - babyPos.y
+                };
+
+                const distance = Math.sqrt(toWaypoint.x * toWaypoint.x + toWaypoint.y * toWaypoint.y);
+
+                // Check if this movement would cause a collision with any obstacle
+                let willCollide = false;
+                const babyRadius = 17; // Half of baby size
+                const newPosX = distance <= BABY_SPEED * dt ? nextWaypoint.x : babyPos.x + (toWaypoint.x / distance) * BABY_SPEED * dt;
+                const newPosY = distance <= BABY_SPEED * dt ? nextWaypoint.y : babyPos.y + (toWaypoint.y / distance) * BABY_SPEED * dt;
+
+                // Check collision with all obstacles
+                for (const obstacle of obstacles) {
+                    // Calculate closest point on rectangle to baby's center
+                    const closestX = Math.max(obstacle.x, Math.min(newPosX, obstacle.x + obstacle.width));
+                    const closestY = Math.max(obstacle.y, Math.min(newPosY, obstacle.y + obstacle.height));
+
+                    // Calculate distance from closest point to baby's center
+                    const distToObstacle = Math.sqrt(
+                        Math.pow(closestX - newPosX, 2) +
+                        Math.pow(closestY - newPosY, 2)
+                    );
+
+                    if (distToObstacle < babyRadius) {
+                        willCollide = true;
+                        break;
+                    }
+                }
+
+                if (willCollide) {
+                    // Skip this waypoint and request a new path on next update
+                    babyPath.shift();
+                    lastPathUpdate = THINKING_TIME;
+                } else if (distance <= BABY_SPEED * dt) {
+                    // Reached waypoint
+                    babyPos.x = nextWaypoint.x;
+                    babyPos.y = nextWaypoint.y;
+                    babyPath.shift();
+                } else {
+                    // Move towards waypoint
+                    const moveX = (toWaypoint.x / distance) * BABY_SPEED * dt;
+                    const moveY = (toWaypoint.y / distance) * BABY_SPEED * dt;
+
+                    babyPos.x += moveX;
+                    babyPos.y += moveY;
+
+                    // Calculate target rotation angle - add 90 degrees to correct orientation
+                    babyTargetRotation = Math.atan2(moveY, moveX) * (180 / Math.PI) + 90;
+
+                    // Smooth rotation towards target
+                    const rotationDiff = ((babyTargetRotation - babyRotation + 540) % 360) - 180; // Calculate shortest angle
+                    const rotationStep = Math.min(Math.abs(rotationDiff), babyRotationSpeed * dt) * Math.sign(rotationDiff);
+                    babyRotation += rotationStep;
+
+                    // Animate limbs based on movement
+                    const crawlCycle = (gameTime * 5) % 1; // Animation cycle
+                    const limbSwing = Math.sin(crawlCycle * Math.PI * 2) * 15;
+
+                    // Left limbs move opposite to right limbs
+                    document.getElementById('babyLeftArm').style.transform = `rotate(${limbSwing}deg)`;
+                    document.getElementById('babyRightArm').style.transform = `rotate(${-limbSwing}deg)`;
+                    document.getElementById('babyLeftLeg').style.transform = `rotate(${-limbSwing}deg)`;
+                    document.getElementById('babyRightLeg').style.transform = `rotate(${limbSwing}deg)`;
+
+                    // Make the head lead the crawling direction
+                    // Tilt the head forward a bit in the direction of movement
+                    document.getElementById('babyHead').style.transform = 'rotate(-15deg)';
+                }
+
+                // Update baby's position
+                baby.style.left = (babyPos.x - 17) + 'px'; // Adjusted for smaller baby size
+                baby.style.top = (babyPos.y - 17) + 'px'; // Adjusted for smaller baby size
+                baby.style.transform = `rotate(${babyRotation}deg)`;
+
+                // Check if baby reached an exit
+                for (const exit of exits) {
+                    if (
+                        babyPos.x >= exit.x &&
+                        babyPos.x <= exit.x + exit.width &&
+                        babyPos.y >= exit.y &&
+                        babyPos.y <= exit.y + exit.height
+                    ) {
+                        gameLose();
+                        return;
+                    }
+                }
+            }
+        }
+
+        // Shuffle array for random baby movement
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Game win
+        function gameWin() {
+            gameRunning = false;
+            winText.textContent = `You win! You kept the baby safe for ${gameTime.toFixed(1)} seconds.`;
+            winMessage.style.display = 'block';
+
+            // Add to highscore or other stats if needed
+        }
+
+        // Game lose
+        function gameLose() {
+            gameRunning = false;
+            winText.textContent = `The baby escaped after ${gameTime.toFixed(1)} seconds!`;
+            winMessage.style.display = 'block';
+        }
+
+        // Initialize game
+        function initGame() {
+            // Reset game state
+            gameRunning = true;
+            gameTime = 0;
+            babyPos = { x: ROOM_WIDTH / 2, y: ROOM_HEIGHT / 2 };
+            babyRotation = 90;
+            babyTargetRotation = 90;
+            babyPath = [];
+            lastPathUpdate = 0;
+            obstacles = [];
+
+            // Clear HTML elements
+            document.querySelectorAll('.obstacle').forEach(el => el.remove());
+            document.querySelectorAll('.exit').forEach(el => el.remove());
+            clearPathVisualization(); // Clear any path visualizations
+
+            // Set initial baby position
+            baby.style.left = (babyPos.x - 17) + 'px'; // Adjusted for smaller baby size
+            baby.style.top = (babyPos.y - 17) + 'px'; // Adjusted for smaller baby size
+            baby.style.transform = 'rotate(90deg)';
+
+            // Initialize baby limbs
+            document.getElementById('babyLeftArm').style.transform = 'rotate(0deg)';
+            document.getElementById('babyRightArm').style.transform = 'rotate(0deg)';
+            document.getElementById('babyLeftLeg').style.transform = 'rotate(0deg)';
+            document.getElementById('babyRightLeg').style.transform = 'rotate(0deg)';
+
+            // Position baby limbs correctly
+            document.getElementById('babyLeftArm').style.left = '-4px';
+            document.getElementById('babyRightArm').style.left = '17px';
+            document.getElementById('babyLeftLeg').style.left = '0px';
+            document.getElementById('babyRightLeg').style.left = '13px';
+
+            // Hide win message
+            winMessage.style.display = 'none';
+
+            // Create new game elements
+            createExits();
+            createObstacles();
+            initGrid();
+
+            // Check initial baby state
+            checkBabyTrapped();
+        }
+
+        // Game loop
+        let lastTimestamp = 0;
+
+        function gameLoop(timestamp) {
+            const dt = (timestamp - lastTimestamp) / 1000;
+            lastTimestamp = timestamp;
+
+            if (gameRunning) {
+                gameTime += dt;
+                timer.textContent = gameTime.toFixed(1);
+
+                updateBabyMovement(dt);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Toggle path visualization
+        function togglePathVisualization() {
+            showVisualization = !showVisualization;
+
+            if (showVisualization) {
+                toggleVisualizationBtn.textContent = "Hide Path";
+                visualizePath(babyPath);
+            } else {
+                toggleVisualizationBtn.textContent = "Show Path";
+                clearPathVisualization();
+            }
+        }
+
+        // Clear visualization elements
+        function clearPathVisualization() {
+            // Remove all path dots
+            pathVisuals.forEach(visual => {
+                if (visual && visual.parentNode) {
+                    visual.parentNode.removeChild(visual);
+                }
+            });
+            pathVisuals = [];
+
+            // Remove all line-of-sight lines
+            lineOfSightVisuals.forEach(line => {
+                if (line && line.parentNode) {
+                    line.parentNode.removeChild(line);
+                }
+            });
+            lineOfSightVisuals = [];
+        }
+
+        // Visualize the current path
+        function visualizePath(path) {
+            clearPathVisualization();
+
+            if (!showVisualization || !path || path.length === 0) return;
+
+            // Draw path points
+            path.forEach((point, index) => {
+                const dot = document.createElement('div');
+                dot.className = 'path-visualization';
+                dot.style.left = (point.x * GRID_SIZE + GRID_SIZE / 2 - 3) + 'px';
+                dot.style.top = (point.y * GRID_SIZE + GRID_SIZE / 2 - 3) + 'px';
+                gameContainer.appendChild(dot);
+                pathVisuals.push(dot);
+
+                // Draw line-of-sight connections if this point has a parent
+                if (index > 0 && point.parent !== undefined && point.parent !== null) {
+                    const parent = path[point.parent];
+
+                    // Only draw if there's a valid parent (should always be the case)
+                    if (parent) {
+                        const startX = parent.x * GRID_SIZE + GRID_SIZE / 2;
+                        const startY = parent.y * GRID_SIZE + GRID_SIZE / 2;
+                        const endX = point.x * GRID_SIZE + GRID_SIZE / 2;
+                        const endY = point.y * GRID_SIZE + GRID_SIZE / 2;
+
+                        const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+                        const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
+
+                        const line = document.createElement('div');
+                        line.className = 'line-of-sight';
+                        line.style.left = startX + 'px';
+                        line.style.top = startY + 'px';
+                        line.style.width = length + 'px';
+                        line.style.transform = `rotate(${angle}deg)`;
+                        gameContainer.appendChild(line);
+                        lineOfSightVisuals.push(line);
+                    }
+                }
+            });
+        }
+
+        // Event listeners
+        restartButton.addEventListener('click', initGame);
+        toggleVisualizationBtn.addEventListener('click', togglePathVisualization);
+
+        // Start the game
+        initGame();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>

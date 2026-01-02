@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Starling Murmuration</title>
+    <meta name="description" content="A 3D simulation of starling murmuration showcasing flocking behavior with emergent patterns and synchronization">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #fps {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="fps">Starlings: -</div>
+    <script>
+        // Set up scene, camera, and renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Create sunset gradient background
+        const canvas = document.createElement('canvas');
+        canvas.width = 2;
+        canvas.height = 512;
+        const context = canvas.getContext('2d');
+        const gradient = context.createLinearGradient(0, 0, 0, 512);
+        gradient.addColorStop(0, '#1e2761');   // Deep dusky blue
+        gradient.addColorStop(0.5, '#7c90a0'); // Muted steel blue
+        gradient.addColorStop(1, '#b5c1c9');   // Light gray-blue
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, 2, 512);
+        const texture = new THREE.CanvasTexture(canvas);
+        scene.background = texture;
+
+        const BOUNDS = { y: 100, z: 100 };
+        BOUNDS.x = BOUNDS.y * camera.aspect;
+
+        camera.position.z = 230;
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            BOUNDS.x = BOUNDS.y * camera.aspect;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Add bounding box visualization (doesn't currently update on resize)
+        // const boxGeometry = new THREE.BoxGeometry(BOUNDS.x * 2, BOUNDS.y * 2, BOUNDS.z * 2);
+        // const edges = new THREE.EdgesGeometry(boxGeometry);
+        // const boundingBox = new THREE.LineSegments(
+        //     edges,
+        //     new THREE.LineBasicMaterial({
+        //         color: 0x666666,
+        //         transparent: true,
+        //         opacity: 0.2
+        //     })
+        // );
+        // scene.add(boundingBox);
+
+        // Spatial hash grid for efficient neighbor lookups
+        class SpatialHash {
+            constructor(cellSize) {
+                this.cellSize = cellSize;
+                this.grid = new Map();
+
+                // Create reusable geometry for grid visualization
+                const gridMaterial = new THREE.LineBasicMaterial({
+                    color: 0x44ff44,
+                    transparent: true,
+                    opacity: 0.1
+                });
+                this.gridCells = new THREE.Group();
+                scene.add(this.gridCells);
+            }
+
+            updateVisualization() {
+                // Clear previous cells
+                while(this.gridCells.children.length > 0) {
+                    const child = this.gridCells.children[0];
+                    child.geometry.dispose();
+                    this.gridCells.remove(child);
+                }
+
+                // Create new cells for occupied grid spaces
+                this.grid.forEach((starlings, key) => {
+                    const [x, y, z] = key.split(',').map(Number);
+                    const cellGeometry = new THREE.BoxGeometry(
+                        this.cellSize,
+                        this.cellSize,
+                        this.cellSize
+                    );
+                    const edges = new THREE.EdgesGeometry(cellGeometry);
+                    const cell = new THREE.LineSegments(
+                        edges,
+                        new THREE.LineBasicMaterial({
+                            color: 0x44ff44,
+                            transparent: true,
+                            opacity: 0.1 + (starlings.length * 0.01) // Opacity increases with starling count
+                        })
+                    );
+                    cell.position.set(
+                        (x + 0.5) * this.cellSize,
+                        (y + 0.5) * this.cellSize,
+                        (z + 0.5) * this.cellSize
+                    );
+                    this.gridCells.add(cell);
+                });
+            }
+
+            getCellKey(x, y, z) {
+                const cx = Math.floor(x / this.cellSize);
+                const cy = Math.floor(y / this.cellSize);
+                const cz = Math.floor(z / this.cellSize);
+                return `${cx},${cy},${cz}`;
+            }
+
+            clear() {
+                this.grid.clear();
+            }
+
+            insert(starling, index) {
+                const key = this.getCellKey(
+                    starling.position.x,
+                    starling.position.y,
+                    starling.position.z
+                );
+
+                if (!this.grid.has(key)) {
+                    this.grid.set(key, []);
+                }
+                this.grid.get(key).push(index);
+            }
+
+            getNearbyIndices(position, radius) {
+                const nearby = new Set();
+                const cellRadius = Math.ceil(radius / this.cellSize);
+
+                const centerCell = {
+                    x: Math.floor(position.x / this.cellSize),
+                    y: Math.floor(position.y / this.cellSize),
+                    z: Math.floor(position.z / this.cellSize)
+                };
+
+                for (let x = -cellRadius; x <= cellRadius; x++) {
+                    for (let y = -cellRadius; y <= cellRadius; y++) {
+                        for (let z = -cellRadius; z <= cellRadius; z++) {
+                            const key = `${centerCell.x + x},${centerCell.y + y},${centerCell.z + z}`;
+                            const cell = this.grid.get(key);
+                            if (cell) {
+                                cell.forEach(index => nearby.add(index));
+                            }
+                        }
+                    }
+                }
+
+                return Array.from(nearby);
+            }
+        }
+
+        const NEIGHBOR_RADIUS = 15;
+        const SEPARATION_RADIUS = 3;
+        const SPATIAL_CELL_SIZE = NEIGHBOR_RADIUS;
+        const spatialHash = new SpatialHash(SPATIAL_CELL_SIZE);
+
+        class Starling {
+            constructor() {
+                this.position = new THREE.Vector3(
+                    (Math.random() - 0.5) * BOUNDS.x * 2,
+                    (Math.random() - 0.5) * BOUNDS.y * 2,
+                    (Math.random() - 0.5) * BOUNDS.z * 2
+                );
+                this.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2
+                );
+                this.acceleration = new THREE.Vector3();
+
+                this.separation = new THREE.Vector3();
+                this.alignment = new THREE.Vector3();
+                this.cohesion = new THREE.Vector3();
+
+                this.nextForces = {
+                    separation: new THREE.Vector3(),
+                    alignment: new THREE.Vector3(),
+                    cohesion: new THREE.Vector3()
+                };
+            }
+
+            calculateFlockingForces(starlings, neighborIndices) {
+                this.separation.setScalar(0);
+                this.alignment.setScalar(0);
+                this.cohesion.setScalar(0);
+
+                let separationCount = 0;
+                let neighborCount = 0;
+
+                const diff = new THREE.Vector3();
+
+                neighborIndices.forEach(i => {
+                    const other = starlings[i];
+                    const d = this.position.distanceTo(other.position);
+
+                    if (d > 0 && d < SEPARATION_RADIUS) {
+                        diff.copy(this.position).sub(other.position);
+                        diff.normalize();
+                        diff.divideScalar(d);
+                        this.separation.add(diff);
+                        separationCount++;
+                    }
+
+                    if (d > 0 && d < NEIGHBOR_RADIUS) {
+                        this.alignment.add(other.velocity);
+                        this.cohesion.add(other.position);
+                        neighborCount++;
+                    }
+                });
+
+                if (separationCount > 0) this.separation.divideScalar(separationCount);
+                if (neighborCount > 0) {
+                    this.alignment
+                      .divideScalar(neighborCount)
+                      .normalize()
+                      .multiplyScalar(2)
+                      .sub(this.velocity)
+                      .clampLength(0, 0.1);
+
+                    this.cohesion.divideScalar(neighborCount);
+                    const steer = this.seek(this.cohesion);
+                    this.cohesion.copy(steer);
+                }
+
+                this.nextForces.separation.copy(this.separation);
+                this.nextForces.alignment.copy(this.alignment);
+                this.nextForces.cohesion.copy(this.cohesion);
+            }
+
+            updatePosition(deltaTime) {
+                const timeScale = (deltaTime / 16.67) * 0.5;
+                const bounds = this.boundPosition();
+
+                if (this.nextForces) {
+                    this.nextForces.separation.multiplyScalar(1.5 * timeScale);
+                    this.nextForces.alignment.multiplyScalar(1.0 * timeScale);
+                    this.nextForces.cohesion.multiplyScalar(1.0 * timeScale);
+                    bounds.multiplyScalar(1.0 * timeScale);
+
+                    this.acceleration.add(this.nextForces.separation);
+                    this.acceleration.add(this.nextForces.alignment);
+                    this.acceleration.add(this.nextForces.cohesion);
+                }
+                this.acceleration.add(bounds);
+
+                this.velocity.add(this.acceleration);
+                this.velocity.clampLength(0, 0.4);
+                this.position.add(this.velocity.clone().multiplyScalar(timeScale));
+                this.acceleration.multiplyScalar(0);
+
+                // Reset forces after use
+                this.nextForces.separation.set(0, 0, 0);
+                this.nextForces.alignment.set(0, 0, 0);
+                this.nextForces.cohesion.set(0, 0, 0);
+            }
+
+            seek(target) {
+                const desired = target.clone().sub(this.position);
+                desired.normalize();
+                desired.multiplyScalar(2);
+                const steer = desired.sub(this.velocity);
+                steer.clampLength(0, 0.1);
+                return steer;
+            }
+
+            boundPosition() {
+                const steer = new THREE.Vector3();
+
+                if (this.position.x < -BOUNDS.x) steer.x = 1;
+                if (this.position.x > BOUNDS.x) steer.x = -1;
+                if (this.position.y < -BOUNDS.y) steer.y = 1;
+                if (this.position.y > BOUNDS.y) steer.y = -1;
+                if (this.position.z < -BOUNDS.z) steer.z = 1;
+                if (this.position.z > BOUNDS.z) steer.z = -1;
+
+                return steer;
+            }
+        }
+
+        let frameCount = 0;
+        let lastTime = performance.now();
+        let lastFPSUpdate = performance.now();
+        let lastFrameTime = performance.now();
+        const fpsElement = document.getElementById('fps');
+
+        let starlings = [];
+        let geometry = new THREE.BufferGeometry();
+        let points;
+
+        function initializeStarlings(numStarlings) {
+            if (points) {
+                scene.remove(points);
+            }
+
+            starlings = [];
+            const positions = new Float32Array(numStarlings * 3);
+            const material = new THREE.PointsMaterial({
+                color: 0x000000,
+                size: 0.5,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            for (let i = 0; i < numStarlings; i++) {
+                const starling = new Starling();
+                starlings.push(starling);
+                positions[i * 3] = starling.position.x;
+                positions[i * 3 + 1] = starling.position.y;
+                positions[i * 3 + 2] = starling.position.z;
+            }
+
+            geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            points = new THREE.Points(geometry, material);
+            scene.add(points);
+        }
+
+        initializeStarlings(1000);
+
+        const FRAME_BUDGET_MS = 13;
+        const TARGET_CALCULATION_FRAMES = 10;
+        let currentStarlingIndex = 0;
+        let framesSinceLastComplete = 0;
+
+        function adjustStarlingCount() {
+            const currentCount = starlings.length;
+            const frameDeviation = Math.abs(framesSinceLastComplete - TARGET_CALCULATION_FRAMES);
+
+            // Only adjust if we're more than 3 frames off from target
+            if (frameDeviation <= 3) {
+                framesSinceLastComplete = 0;
+                return;
+            }
+
+            if (framesSinceLastComplete > TARGET_CALCULATION_FRAMES) {
+                // Taking too long to calculate all starlings, remove some
+                const toRemove = Math.max(1, Math.floor(currentCount * 0.05));
+                for (let i = 0; i < toRemove; i++) {
+                    const indexToRemove = Math.floor(Math.random() * starlings.length);
+                    starlings.splice(indexToRemove, 1);
+                }
+                // Adjust current index if needed
+                currentStarlingIndex = Math.min(currentStarlingIndex, starlings.length - 1);
+            }
+            else {
+                // Add more starlings
+                const toAdd = Math.max(1, Math.floor(currentCount * 0.05));
+                for (let i = 0; i < toAdd; i++) {
+                    const starling = new Starling();
+                    // Initialize new starling near an existing one for smoother transition
+                    if (starlings.length > 0) {
+                        const nearbyStarling = starlings[Math.floor(Math.random() * starlings.length)];
+                        starling.position.copy(nearbyStarling.position).add(
+                            new THREE.Vector3(
+                                (Math.random() - 0.5) * 10,
+                                (Math.random() - 0.5) * 10,
+                                (Math.random() - 0.5) * 10
+                            )
+                        );
+                        starling.velocity.copy(nearbyStarling.velocity).multiplyScalar(0.9 + Math.random() * 0.2);
+                    }
+                    starlings.push(starling);
+                }
+            }
+
+            // Update geometry buffer size if needed
+            if (points) {
+                const positions = new Float32Array(starlings.length * 3);
+                starlings.forEach((starling, i) => {
+                    positions[i * 3] = starling.position.x;
+                    positions[i * 3 + 1] = starling.position.y;
+                    positions[i * 3 + 2] = starling.position.z;
+                });
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            }
+
+            framesSinceLastComplete = 0;
+        }
+
+        function getRandomElements(arr, n) {
+            if (n > arr.length) {
+                return arr;
+            }
+
+            const result = [];
+            const indices = new Set();
+
+            while (result.length < n) {
+                const randomIndex = Math.floor(Math.random() * arr.length);
+
+                // Only add unique indices
+                if (!indices.has(randomIndex)) {
+                    indices.add(randomIndex);
+                    result.push(arr[randomIndex]);
+                }
+            }
+
+            return result;
+        }
+
+        function animate() {
+            const currentTime = performance.now();
+            const deltaTime = currentTime - lastFrameTime;
+            lastFrameTime = currentTime;
+
+            requestAnimationFrame(animate);
+
+            // Skip huge time jumps, the tab was probably out of focus.
+            if (deltaTime > 1000) return;
+
+            if (currentStarlingIndex === 0) {
+                spatialHash.clear();
+                starlings.forEach((starling, index) => {
+                    spatialHash.insert(starling, index);
+                });
+                // spatialHash.updateVisualization();
+            }
+
+            const calcStartTime = performance.now();
+
+            while (currentStarlingIndex < starlings.length &&
+                   performance.now() - calcStartTime < FRAME_BUDGET_MS) {
+                const starling = starlings[currentStarlingIndex];
+                const nearby = spatialHash.getNearbyIndices(starling.position, NEIGHBOR_RADIUS);
+                starling.calculateFlockingForces(starlings, getRandomElements(nearby, 100));
+
+                currentStarlingIndex++;
+            }
+
+            framesSinceLastComplete++;
+
+            if (currentStarlingIndex >= starlings.length) {
+                currentStarlingIndex = 0;
+                adjustStarlingCount();
+            }
+
+            frameCount++;
+            const frameTime = performance.now() - currentTime;
+            if (currentTime - lastFPSUpdate >= 1000) {
+                const fps = Math.round((frameCount * 1000) / (currentTime - lastFPSUpdate));
+                fpsElement.textContent = `${fps < 59 ? `FPS: ${fps} | ` : ''}Starlings: ${starlings.length}`;
+                frameCount = 0;
+                lastFPSUpdate = currentTime;
+            }
+
+            starlings.forEach(starling => {
+                starling.updatePosition(deltaTime);
+            });
+
+            const positions = points.geometry.attributes.position.array;
+            starlings.forEach((starling, i) => {
+                positions[i * 3] = starling.position.x;
+                positions[i * 3 + 1] = starling.position.y;
+                positions[i * 3 + 2] = starling.position.z;
+            });
+            points.geometry.attributes.position.needsUpdate = true;
+
+            // Slowly rotate camera
+            // camera.position.x = Math.sin(Date.now() * 0.0001) * 150;
+            // camera.position.z = Math.cos(Date.now() * 0.0001) * 150;
+            // camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

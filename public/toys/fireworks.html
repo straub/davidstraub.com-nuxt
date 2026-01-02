@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="description" content="A colorful and dynamic fireworks simulation with realistic physics and particle effects">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+    }
+    canvas {
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size to window size
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Particle class for both fireworks and smoke
+    class Particle {
+      constructor(x, y, z, color) {
+        this.pos = { x, y, z };
+        this.vel = {
+          x: (Math.random() - 0.5) * 8,
+          y: (Math.random() - 0.5) * 8,
+          z: (Math.random() - 0.5) * 8
+        };
+        this.initialVel = { ...this.vel };
+        this.color = color;
+        this.alpha = 1;
+        this.life = 1;
+        this.isSmoke = false;
+      }
+
+      update() {
+        // Apply air resistance and upward drift for smoke
+        if (this.isSmoke) {
+          this.vel.y += -0.05; // Constant upward drift
+          this.vel.y = Math.max(this.vel.y, -0.5);
+          this.vel.x *= 0.98;
+          this.vel.z *= 0.98;
+        } else {
+          this.vel.y += 0.1; // Gravity only for spark particles
+          this.vel.x *= 0.99;
+          this.vel.y *= 0.99;
+          this.vel.z *= 0.99;
+        }
+
+        // Update position
+        this.pos.x += this.vel.x;
+        this.pos.y += this.vel.y;
+        this.pos.z += this.vel.z;
+
+        // Update life and alpha
+        this.life *= this.isSmoke ? 0.999 : 0.96;
+        this.alpha = this.life;
+
+        // Convert to smoke when almost dead
+        if (this.life < 0.3 && !this.isSmoke) {
+          this.isSmoke = true;
+          // this.vel.y = -Math.abs(this.vel.y) * 0.1; // Smoke rises slowly
+        }
+      }
+
+      draw(ctx, lights) {
+        // Project 3D position to 2D
+        const scale = 1000 / (1000 + this.pos.z);
+        const x2d = this.pos.x * scale + canvas.width / 2;
+        const y2d = this.pos.y * scale + canvas.height / 2;
+
+        // Calculate illumination from nearby explosions
+        let illumination = 0;
+        lights.forEach(light => {
+          const dx = this.pos.x - light.x;
+          const dy = this.pos.y - light.y;
+          const dz = this.pos.z - light.z;
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          illumination += Math.max(0, 1 - dist / 200) * light.intensity;
+        });
+
+        // Draw particle
+        ctx.beginPath();
+        ctx.arc(x2d, y2d, this.isSmoke ? 3 * scale : 2 * scale, 0, Math.PI * 2);
+        
+        if (this.isSmoke) {
+          let r = 128, g = 128, b = 128, totalIntensity = 0;
+          lights.forEach(light => {
+            const dx = this.pos.x - light.x;
+            const dy = this.pos.y - light.y;
+            const dz = this.pos.z - light.z;
+            const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            const intensity = Math.max(0, 1 - dist / 200) * light.intensity;
+            r += (light.color[0] - 128) * intensity * 0.6;
+            g += (light.color[1] - 128) * intensity * 0.3;
+            b += (light.color[2] - 128) * intensity * 0.3;
+            totalIntensity += intensity;
+          });
+          
+          r = Math.min(255, Math.max(0, r));
+          g = Math.min(255, Math.max(0, g));
+          b = Math.min(255, Math.max(0, b));
+          
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${Math.min(1, totalIntensity * 0.5)})`;
+        } else {
+          const [r, g, b] = this.color;
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${this.alpha})`;
+        }
+        
+        ctx.fill();
+      }
+    }
+
+    // Firework class
+    class Firework {
+      constructor(x, y, z) {
+        const colors = [
+          [255, 50, 50],    // Red
+          [50, 255, 50],    // Green
+          [50, 50, 255],    // Blue
+          [255, 255, 50],   // Yellow
+          [255, 50, 255],   // Purple
+          [50, 255, 255],   // Cyan
+          [255, 255, 255]   // White
+        ];
+        
+        this.particles = [];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        this.light = { x, y, z, intensity: 1, color };
+        // Create explosion particles
+        for (let i = 0; i < 100; i++) {
+          this.particles.push(new Particle(x, y, z, color));
+        }
+      }
+
+      update() {
+        this.particles = this.particles.filter(p => p.life > 0.01);
+        this.particles.forEach(p => p.update());
+        this.light.intensity *= 0.95;
+      }
+
+      draw(ctx, lights) {
+        this.particles.forEach(p => p.draw(ctx, lights));
+      }
+
+      isDead() {
+        return this.particles.length === 0;
+      }
+    }
+
+    // Animation state
+    let fireworks = [];
+    let lastFirework = 0;
+
+    // Animation loop
+    function animate() {
+      // Clear canvas with slight fade for trail effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Launch new fireworks randomly
+      const now = Date.now();
+      if (now - lastFirework > 1000 + Math.random() * 1000) {
+        const x = (Math.random() - 0.5) * canvas.width;
+        const y = -canvas.height / 4;
+        const z = (Math.random() - 0.5) * 500;
+        fireworks.push(new Firework(x, y, z));
+        lastFirework = now;
+      }
+
+      // Get all active lights
+      const lights = fireworks
+        .map(f => f.light)
+        .filter(l => l.intensity > 0.1);
+
+      // Update and draw fireworks
+      fireworks = fireworks.filter(f => !f.isDead());
+      fireworks.forEach(f => {
+        f.update();
+        f.draw(ctx, lights);
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    // Start animation
+    animate();
+
+    // Add click/touch interaction
+    function addFirework(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left - canvas.width / 2;
+      const y = e.clientY - rect.top - canvas.height / 2;
+      const z = (Math.random() - 0.5) * 500;
+      fireworks.push(new Firework(x, y, z));
+      lastFirework = Date.now();
+    }
+
+    canvas.addEventListener('click', addFirework);
+    canvas.addEventListener('touchstart', e => {
+      e.preventDefault();
+      addFirework(e.touches[0]);
+    });
+  </script>
+</body>
+</html>
