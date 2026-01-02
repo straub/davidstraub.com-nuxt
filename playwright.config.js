@@ -12,6 +12,11 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.02, // Allow 2% pixel difference for font rendering between environments
+    },
+  },
   projects: [
     {
       name: 'chromium',
