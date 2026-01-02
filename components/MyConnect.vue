@@ -29,4 +29,12 @@ export default {
   .icon {
     height: 3rem;
   }
+
+  @media print {
+    section a:link:after, section a:visited:after {
+      display: block;
+      content: attr(href);
+      font-size: 90%;
+    }
+  }
 </style>
