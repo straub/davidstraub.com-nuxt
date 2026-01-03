@@ -1,6 +1,7 @@
 # TODO: Unfinished Features Analysis
 
 Generated: 2025-11-23
+Updated: 2026-01-03 (PR #334 Nuxt v4 upgrade merged)
 
 ## Feature Groups
 
@@ -56,42 +57,6 @@ A new page to showcase interactive HTML experiments.
 ---
 
 ## Open Pull Requests: Dependency Updates
-
-### PR #334: Update Nuxt to v4 ✅ Tests Passing
-**Branch:** `renovate/major-nuxtjs-monorepo` | **Opened:** 2025-07-15
-**Changes:** `3.20.2` → `4.2.2` (275 additions, 129 deletions)
-
-This is a **major version upgrade** from Nuxt 3 to Nuxt 4 with significant breaking changes and new features.
-
-**Status:**
-- ✅ All CI checks passing
-- ✅ Tests passing
-- ✅ Security checks passing
-
-**Key Changes in Nuxt 4:**
-- New Vite Environment API (opt-in experimental)
-- Enhanced error pages in development
-- Abort control for data fetching (`useAsyncData`)
-- Async data handler extraction (can reduce bundle size by ~39% for static sites)
-- Experimental TypeScript plugin support
-- New `@nuxt/nitro-server` package (internal refactor)
-
-**What We Need to Do:**
-1. **Review breaking changes** - Check the full [Nuxt 4 migration guide](https://nuxt.com/docs/getting-started/upgrade#upgrading-nuxt) for compatibility
-2. **Test locally** - Run `npm ci` and test all features:
-   - Dev server (`npm run dev`)
-   - Build process (`npm run build`)
-   - Static generation (`npm run generate`)
-   - Preview (`npm run preview`)
-3. **Run full test suite** - Unit tests and Playwright visual regression tests
-4. **Check for deprecations** - Review any deprecation warnings in console
-5. **Verify feature branches** - Since this is a major Nuxt update, test that feature branches (`feat/portfolio-redesign`, `feat/print-styles`, `feat/toys-page`) still work
-6. **Update AGENTS.md** - Note Nuxt version change if needed
-7. **Merge** - Since CI is passing, this might be ready to merge after local testing
-
-**Estimated Complexity:** Medium-High (major version with breaking changes, but tests are passing)
-
----
 
 ### PR #306: Update Vitest to v4 ❌ Tests Failing
 **Branch:** `renovate/major-vitest-monorepo` | **Opened:** 2025-01-16
