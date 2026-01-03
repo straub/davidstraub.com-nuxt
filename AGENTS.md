@@ -172,6 +172,7 @@ When working on features, check if they exist on a branch first. Components comm
 
 ## Key Files
 
+- `AGENTS.md` - **Main file** - This document. Guidelines for AI assistants. (`CLAUDE.md` is a symlink to this file)
 - `nuxt.config.js` - Nuxt configuration, plugins, fonts, static target
 - `playwright.config.js` - Visual testing with GPU workarounds for local dev
 - `vitest.config.js` - Unit test configuration excluding Playwright tests
