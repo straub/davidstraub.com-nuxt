@@ -107,6 +107,12 @@ Check **TODO.md** for:
 
 When working on features, check if they exist on a branch first. Components commented out in main may be active on feature branches.
 
+**When merging PRs**:
+- ALWAYS ask for explicit permission before merging to main
+- Confirm all testing is complete and documented
+- Verify all GitHub Actions checks pass with `gh pr checks <PR#>`
+- Do not assume permission from general task requests like "let's tackle this feature"
+
 **When merging feature branches**: Update TODO.md to remove completed features and update dependency maps.
 
 **When updating Node versions**:
@@ -124,6 +130,12 @@ When working on features, check if they exist on a branch first. Components comm
 - View failed CI logs with `gh run view <run-id> --log-failed`
 - Update AGENTS.md if architecture or requirements change
 
+**When updating TODO.md**:
+- Remove completed work/PRs entirely - don't add "Completed" sections
+- Keep only actively pending features and PRs
+- Update the "Updated" or "Generated" date when making changes
+- Ensure remaining content makes sense in the updated context
+
 **Resolving package-lock.json merge conflicts**:
 - Ensure you're using the correct Node version (see `.node-version`)
 - Run `npm install --package-lock-only` to regenerate based on merged `package.json`
@@ -133,7 +145,7 @@ When working on features, check if they exist on a branch first. Components comm
 ## Code Conventions
 
 ### Commits & Hooks
-- **Commitlint**: Enforces conventional commits (feat:, fix:, chore:, etc.)
+- **Commitlint**: Enforces conventional commits with lowercase subjects (feat:, fix:, chore:, etc.) - use `docs: update` not `docs: Update`
 - **Husky pre-commit**: Runs `npm test` (unit tests only, not Playwright)
 - **Lint-staged**: ESLint on staged `.js` and `.vue` files
 
