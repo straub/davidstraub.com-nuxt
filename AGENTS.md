@@ -4,6 +4,11 @@ This file provides guidance to AI coding assistants when working with code in th
 
 **IMPORTANT**: When making significant architectural changes, adding new testing infrastructure, changing build/deployment processes, or updating the feature branch strategy, update both **AGENTS.md** and **TODO.md** to reflect the current state of the codebase.
 
+**Documentation DRY Principle**:
+- Never hardcode version numbers in docs - point to source files instead (`.node-version`, `package.json`)
+- Don't duplicate content between documentation sections or files - keep each in one place
+- When updating docs, check if the information is defined elsewhere and link to it rather than repeating
+
 ## Project Overview
 
 Personal portfolio/resume website built with **Nuxt** (see `package.json` for current version), deployed as a **static site** to Netlify. The main branch contains a stable, minimal portfolio. Multiple long-lived feature branches contain nearly-complete features that are being polished before merge.
