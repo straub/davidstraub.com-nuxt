@@ -6,7 +6,7 @@ This file provides guidance to AI coding assistants when working with code in th
 
 ## Project Overview
 
-Personal portfolio/resume website built with **Nuxt 3.20.2** (Vue 3.5.13), deployed as a **static site** to Netlify. The main branch contains a stable, minimal portfolio. Multiple long-lived feature branches contain nearly-complete features that are being polished before merge.
+Personal portfolio/resume website built with **Nuxt** (see `package.json` for current version), deployed as a **static site** to Netlify. The main branch contains a stable, minimal portfolio. Multiple long-lived feature branches contain nearly-complete features that are being polished before merge.
 
 ## Development Commands
 
@@ -34,11 +34,10 @@ gh run view <run-id> --log-failed  # View failed CI logs
 gh pr view <PR#>         # View PR details including check status
 ```
 
-## Node Version Requirements
+## Node Version
 
-- **Required**: Node.js 24.x LTS (see `.node-version`)
-- **Note**: Playwright 1.55+ required for Node 24 compatibility (earlier versions hang during initialization)
-- **Switching versions**: Use `nvm use` or `nvm install` to switch Node versions
+- **Required**: See `.node-version` for the exact version
+- **Switching versions**: Use `nvm use` or `nvm install`
 
 ## Architecture
 
@@ -95,15 +94,7 @@ Single-page application with modular components:
 **Main branch** = Stable, deployed portfolio site
 **Long-lived feature branches** = Nearly-complete features being polished
 
-Check **TODO.md** for:
-- Current feature branch status and completion percentages
-- Component dependency maps for feature branches
-- Recommended completion order
-
-**Key feature branches**:
-- `feat/portfolio-redesign` (~85% complete) - Skills/experience redesign with SkillTree, SkillBadge components
-- `feat/print-styles` (~90% complete) - Resume printing optimizations
-- `feat/toys-page` (~95% complete) - Interactive HTML experiments gallery
+**Feature branches**: See **TODO.md** for current status, completion percentages, and component dependency maps.
 
 When working on features, check if they exist on a branch first. Components commented out in main may be active on feature branches.
 
@@ -165,10 +156,9 @@ When working on features, check if they exist on a branch first. Components comm
 
 ## Deployment
 
-- **Platform**: Netlify (see badge in README.md)
+- **Platform**: Netlify
 - **Build command**: `npm run generate`
 - **Publish directory**: `dist/`
-- **Node version**: 20.x (see `.node-version`)
 
 ## Key Files
 

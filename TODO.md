@@ -183,23 +183,3 @@ pages/toys.vue
 └── server/api/toys.js → public/toys/*.html
 ```
 
----
-
-## Quick Command Reference
-
-```bash
-# Run visual tests
-npm run test:visual
-
-# Update test snapshots
-npm run test:visual:update
-
-# Run dev server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-```
