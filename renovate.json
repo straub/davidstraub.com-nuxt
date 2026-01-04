@@ -62,5 +62,9 @@
       "automerge": true
     }
   ],
+  // Enable GitHub's native automerge feature. This lets GitHub automatically merge PRs
+  // once all branch protection rules (required status checks, approvals, etc.) are met,
+  // instead of requiring a second Renovate run to perform the merge. Not included in
+  // config:best-practices, so must be set explicitly.
   "platformAutomerge": true
 }
