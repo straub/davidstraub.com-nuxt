@@ -5,7 +5,7 @@
   ],
   "packageRules": [
     {
-      "description": "Automerge linters and test tools (existing rules)",
+      "description": "Automerge linters and test tools",
       "extends": [
         "packages:linters",
         "packages:test"
