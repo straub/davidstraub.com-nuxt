@@ -5,6 +5,7 @@
   ],
   "packageRules": [
     {
+      "description": "Automerge linters and test tools (existing rules)",
       "extends": [
         "packages:linters",
         "packages:test"
@@ -17,16 +18,49 @@
       "automerge": true
     },
     {
+      "description": "Automerge Vitest monorepo updates",
       "extends": [
         "monorepo:vitest"
       ],
       "automerge": true
     },
     {
+      "description": "Automerge commitlint monorepo updates",
       "extends": [
         "monorepo:commitlint"
       ],
       "automerge": true
+    },
+    {
+      "description": "Automerge Playwright monorepo updates",
+      "extends": [
+        "monorepo:playwright"
+      ],
+      "automerge": true
+    },
+    {
+      "description": "Automerge GitHub Actions updates",
+      "matchManagers": ["github-actions"],
+      "automerge": true
+    },
+    {
+      "description": "Automerge patch and minor devDependencies updates",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true
+    },
+    {
+      "description": "Automerge patch updates for production dependencies",
+      "matchDepTypes": ["dependencies"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    },
+    {
+      "description": "Automerge minor updates for normalize.css (stable CSS library)",
+      "matchPackageNames": ["@csstools/normalize.css"],
+      "matchUpdateTypes": ["minor"],
+      "automerge": true
     }
-  ]
+  ],
+  "platformAutomerge": true
 }
