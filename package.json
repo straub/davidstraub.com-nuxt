@@ -40,7 +40,7 @@
     "lint-staged": "16.2.7",
     "sass": "1.97.2",
     "vitest": "3.2.4",
-    "vue": "3.5.26",
+    "vue": "3.5.27",
     "yarnhook": "0.6.2"
   },
   "license": "UNLICENSED"
