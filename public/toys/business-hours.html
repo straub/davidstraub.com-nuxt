@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Business Hours Progress</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --accent: #22d3ee;
+      --accent-soft: rgba(34, 211, 238, 0.2);
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at top, #111827 0%, var(--bg) 60%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .card {
+      background: var(--card);
+      padding: 3rem 3.5rem;
+      border-radius: 20px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+      text-align: center;
+      width: min(800px, 92vw);
+    }
+
+    h1 {
+      margin: 0 0 2rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      font-size: 1rem;
+      text-transform: uppercase;
+    }
+
+    .percentage {
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+      margin-bottom: 2.5rem;
+      word-break: break-all;
+    }
+
+    .big {
+      font-size: clamp(3rem, 8vw, 6rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .small {
+      font-size: clamp(1.2rem, 3vw, 2rem);
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .progress-container {
+      width: 100%;
+      height: 28px;
+      background: #1f2937;
+      border-radius: 999px;
+      overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), #38bdf8);
+      transition: width 0.8s linear;
+    }
+
+    .footer {
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Business Hours Elapsed This Month</h1>
+    <div class="percentage">
+      <span id="big" class="big">0.00</span><span id="small" class="small">000000%</span>
+    </div>
+    <div class="progress-container">
+      <div id="bar" class="progress-bar"></div>
+    </div>
+    <div class="footer" id="dateRange"></div>
+  </div>
+
+  <script>
+    const BUSINESS_START_HOUR = 9;   // 9:00 AM
+    const BUSINESS_END_HOUR = 17;    // 5:00 PM
+
+    function isBusinessDay(date) {
+      const day = date.getDay();
+      return day !== 0 && day !== 6; // Monday–Friday
+    }
+
+    function getBusinessHourRangesInMonth(year, month) {
+      const ranges = [];
+      const businessDays = [];
+      const date = new Date(year, month, 1);
+
+      while (date.getMonth() === month) {
+        if (isBusinessDay(date)) {
+          const start = new Date(date);
+          start.setHours(BUSINESS_START_HOUR, 0, 0, 0);
+
+          const end = new Date(date);
+          end.setHours(BUSINESS_END_HOUR, 0, 0, 0);
+
+          ranges.push({ start: new Date(start), end: new Date(end) });
+          businessDays.push(new Date(date));
+        }
+        date.setDate(date.getDate() + 1);
+      }
+
+      return { ranges, businessDays };
+    }
+
+    function update() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+
+      const { ranges, businessDays } = getBusinessHourRangesInMonth(year, month);
+
+      let totalMs = 0;
+      let elapsedMs = 0;
+
+      for (const { start, end } of ranges) {
+        const duration = end - start;
+        totalMs += duration;
+
+        if (now >= end) {
+          elapsedMs += duration;
+        } else if (now > start && now < end) {
+          elapsedMs += (now - start);
+        }
+      }
+
+      const percent = (elapsedMs / totalMs) * 100;
+      const remaining = 100 - percent;
+
+            // Create ONE precise string so large/small are purely formatting
+      const preciseStr = percent.toFixed(10); // single source of truth
+
+      // Find decimal point and keep exactly 2 decimals (4 digits total)
+      const decimalIndex = preciseStr.indexOf(".");
+      const splitIndex = decimalIndex + 3; // include decimal + 2 digits
+
+      const bigPart = preciseStr.slice(0, splitIndex);
+      const smallPart = preciseStr.slice(splitIndex) + "%";
+
+      document.getElementById("big").textContent = bigPart;
+      document.getElementById("small").textContent = smallPart;
+
+      document.getElementById("bar").style.width = percent + "%";
+
+      const totalHours = totalMs / (1000 * 60 * 60);
+      const elapsedHours = elapsedMs / (1000 * 60 * 60);
+
+      const remainingFormatted = remaining.toFixed(2);
+
+      const firstDay = businessDays[0];
+      const lastDay = businessDays[businessDays.length - 1];
+
+      document.getElementById("dateRange").textContent =
+        `From ${firstDay.toLocaleDateString()} to ${lastDay.toLocaleDateString()} · ${businessDays.length} business days · ${totalHours.toFixed(0)} total business hours · ${elapsedHours.toFixed(1)} elapsed · ${remainingFormatted}% remaining`;
+    }
+
+    update();
+    setInterval(update, 1000);
+  </script>
+</body>
+</html>
