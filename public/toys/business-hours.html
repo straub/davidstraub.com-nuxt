@@ -9,9 +9,16 @@
       --bg: #0f172a;
       --card: #111827;
       --accent: #22d3ee;
+      --accent2: #38bdf8;
       --accent-soft: rgba(34, 211, 238, 0.2);
       --text: #e5e7eb;
       --muted: #94a3b8;
+    }
+
+    body.closing {
+      --accent: #fb923c;
+      --accent2: #fbbf24;
+      --accent-soft: rgba(251, 146, 60, 0.2);
     }
 
     * { box-sizing: border-box; }
@@ -76,7 +83,7 @@
     .progress-bar {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, var(--accent), #38bdf8);
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
       transition: width 0.8s linear;
     }
 
@@ -152,7 +159,6 @@
       }
 
       const percent = (elapsedMs / totalMs) * 100;
-      const remaining = 100 - percent;
 
             // Create ONE precise string so large/small are purely formatting
       const preciseStr = percent.toFixed(10); // single source of truth
@@ -169,16 +175,30 @@
 
       document.getElementById("bar").style.width = percent + "%";
 
+      const remainingMs = totalMs - elapsedMs;
+      const remainingHours = remainingMs / (1000 * 60 * 60);
+      const remainingDays = businessDays.filter(d => {
+        const dayEnd = new Date(d);
+        dayEnd.setHours(BUSINESS_END_HOUR, 0, 0, 0);
+        return dayEnd > now;
+      }).length;
+
+      const lastFiveDays = businessDays.slice(-5);
+      const isClosing = lastFiveDays.some(d =>
+        d.getFullYear() === now.getFullYear() &&
+        d.getMonth() === now.getMonth() &&
+        d.getDate() === now.getDate()
+      );
+      document.body.classList.toggle("closing", isClosing);
+
       const totalHours = totalMs / (1000 * 60 * 60);
       const elapsedHours = elapsedMs / (1000 * 60 * 60);
-
-      const remainingFormatted = remaining.toFixed(2);
 
       const firstDay = businessDays[0];
       const lastDay = businessDays[businessDays.length - 1];
 
       document.getElementById("dateRange").textContent =
-        `From ${firstDay.toLocaleDateString()} to ${lastDay.toLocaleDateString()} · ${businessDays.length} business days · ${totalHours.toFixed(0)} total business hours · ${elapsedHours.toFixed(1)} elapsed · ${remainingFormatted}% remaining`;
+        `From ${firstDay.toLocaleDateString()} to ${lastDay.toLocaleDateString()} · ${businessDays.length} business days · ${totalHours.toFixed(0)} total business hours · ${elapsedHours.toFixed(1)} elapsed · ${remainingDays} day${remainingDays !== 1 ? "s" : ""} / ${remainingHours.toFixed(1)} hrs remaining`;
     }
 
     update();
