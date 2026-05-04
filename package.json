@@ -33,7 +33,7 @@
     "@nuxtjs/google-fonts": "3.2.0",
     "@playwright/test": "1.59.1",
     "@vue/test-utils": "2.4.10",
-    "eslint": "8.57.1",
+    "eslint": "10.3.0",
     "happy-dom": "20.9.0",
     "husky": "9.1.7",
     "is-ci": "4.1.0",
