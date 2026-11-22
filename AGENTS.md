@@ -144,12 +144,12 @@ When working on features, check if they exist on a branch first. Components comm
 ### Commits & Hooks
 - **Commitlint**: Enforces conventional commits with lowercase subjects (feat:, fix:, chore:, etc.) - use `docs: update` not `docs: Update`
 - **Husky pre-commit**: Runs `npm test` (unit tests only, not Playwright)
-- **Lint-staged**: ESLint on staged `.js` and `.vue` files
+- **Lint-staged**: configured in `package.json` (ESLint on staged `.js` and `.vue` files), but no Husky hook runs it; CI runs `npm run lint`
 
 ### ESLint Rules
-- Semicolons required
-- Always-multiline comma-dangle
-- Based on `@nuxtjs/eslint-config`
+- Flat config in `eslint.config.js`, built on `@straub/eslint-config` (`vue: true`), plus `.gitignore` as ignore file
+- Semicolons required, always-multiline comma-dangle (both from `@straub/eslint-config`)
+- Nuxt conventions live in this repo's config (e.g. single-word names allowed in `pages/`, `layouts/`, `error.vue`)
 
 ### Component Patterns
 - **External links**: Use `rel="external" target="_blank"`
@@ -173,5 +173,5 @@ When working on features, check if they exist on a branch first. Components comm
 - `playwright.config.js` - Visual testing with GPU workarounds for local dev
 - `vitest.config.js` - Unit test configuration excluding Playwright tests
 - `TODO.md` - Feature branch roadmap and component dependency maps
-- `.eslintrc.json` - ESLint rules (semicolons, comma-dangle)
+- `eslint.config.js` - ESLint flat config (see ESLint Rules)
 - `commitlint.config.js` - Conventional commit enforcement
