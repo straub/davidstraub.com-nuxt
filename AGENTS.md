@@ -143,8 +143,7 @@ When working on features, check if they exist on a branch first. Components comm
 
 ### Commits & Hooks
 - **Commitlint**: Enforces conventional commits with lowercase subjects (feat:, fix:, chore:, etc.) - use `docs: update` not `docs: Update`
-- **Husky pre-commit**: Runs `npm test` (unit tests only, not Playwright)
-- **Lint-staged**: configured in `package.json` (ESLint on staged `.js` and `.vue` files), but no Husky hook runs it; CI runs `npm run lint`
+- **Husky pre-commit**: Runs lint-staged (ESLint on staged `.js` and `.vue` files, config in `package.json`), then `npm test` (unit tests only, not Playwright)
 
 ### ESLint Rules
 - Flat config in `eslint.config.js`, built on `@straub/eslint-config` (`vue: true`), plus `.gitignore` as ignore file
