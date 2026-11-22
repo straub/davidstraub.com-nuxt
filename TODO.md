@@ -1,7 +1,7 @@
 # TODO: Unfinished Features Analysis
 
 Generated: 2025-11-23
-Updated: 2026-11-22 (PR #502 Nuxt 4.6.4 / test-utils 4 / vitest 5 merged)
+Updated: 2026-11-22 (ESLint 10 flat config on @straub/eslint-config)
 
 ## Feature Groups
 
@@ -75,14 +75,6 @@ CI is green but has not actually run on Node 26: `.github/workflows/ci.yml` hard
 2. In the same change, update the "Require Tests" repository ruleset: it requires the check named
    `ci (ubuntu-latest, 24)`, which the matrix change renames. Otherwise every PR stays blocked.
 3. Confirm `ci`, `test` (Playwright) and the Netlify preview pass on Node 26, then merge.
-
-### PR #296: Update ESLint to v10 (waiting on shared config)
-**Branch:** `renovate/major-eslint-monorepo`
-
-Needs a flat-config migration (`.eslintrc.json` → `eslint.config.js`); `@nuxtjs/eslint-config` 12
-only supports ESLint 8. A shared `straub/eslint-config` package is being prepared in a separate
-session; adopt it here once published, keeping the semicolon and always-multiline comma-dangle rules,
-and check lint-staged still works.
 
 ### PR #380: Lock file maintenance
 Renovate's own lockfile refresh; it will be regenerated on its next scheduled run. When regenerating
