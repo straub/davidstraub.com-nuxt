@@ -113,7 +113,7 @@ When working on features, check if they exist on a branch first. Components comm
 
 **When updating Node versions**:
 - Update `.node-version` as the single source of truth
-- All GitHub Actions workflows read from `.node-version` using `node-version-file: '.node-version'`
+- `playwright.yml` reads `.node-version` via `node-version-file`; `ci.yml` still hard-codes its Node matrix (see TODO.md, PR #490). The "Require Tests" ruleset requires the check by its matrix name (`ci (ubuntu-latest, <node>)`), so update the ruleset whenever that name changes
 - Test locally with `nvm use $(cat .node-version)` before pushing
 - After pushing, check all workflows pass with `gh pr checks <PR#>`
 
@@ -134,7 +134,8 @@ When working on features, check if they exist on a branch first. Components comm
 
 **Resolving package-lock.json merge conflicts**:
 - Ensure you're using the correct Node version (see `.node-version`)
-- Run `npm install --package-lock-only` to regenerate based on merged `package.json`
+- Regenerate from the merged `package.json` in a scratch directory without `node_modules` (copy `package.json` and `.npmrc` there, run `npm install --package-lock-only --ignore-scripts`, copy `package-lock.json` back). Run in the repo, npm reuses the installed tree and keeps entries without `resolved`/`integrity`, which breaks Renovate's lockfile updates
+- Verify no lockfile entry is missing `resolved` before committing
 - **Never manually edit** package-lock.json - always regenerate it
 - Stage the regenerated lockfile and complete the merge/rebase
 

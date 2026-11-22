@@ -1,7 +1,7 @@
 # TODO: Unfinished Features Analysis
 
 Generated: 2025-11-23
-Updated: 2026-01-03 (PR #334 Nuxt v4 upgrade merged)
+Updated: 2026-11-22 (PR #502 Nuxt 4.6.4 / test-utils 4 / vitest 5 merged)
 
 ## Feature Groups
 
@@ -58,85 +58,36 @@ A new page to showcase interactive HTML experiments.
 
 ## Open Pull Requests: Dependency Updates
 
-### PR #306: Update Vitest to v4 ❌ Tests Failing
-**Branch:** `renovate/major-vitest-monorepo` | **Opened:** 2025-01-16
-**Changes:** `3.2.4` → `4.0.16` (1 addition, 1 deletion)
+Renovate runs weekly (early Monday, minor/patch grouped into one PR); see `renovate.json`.
 
-This is a **major version upgrade** from Vitest 3 to Vitest 4 with breaking changes.
+### Feature branches: rebase onto current main
+`feat/portfolio-redesign`, `feat/print-styles` and `feat/toys-page` predate the Nuxt 4 merge. They
+merge onto current main without textual conflicts, but need re-testing on Nuxt 4.6.4 after rebasing.
 
-**Status:**
-- ❌ CI failing (13s)
-- ❌ Tests failing (14s)
-- ❌ Renovate artifacts failure
-- ✅ Security checks passing
+### PR #490: Update Node.js to v26 (on hold)
+**Branch:** `renovate/node-26.x` | changes only `.node-version`
 
-**Key Changes in Vitest 4:**
-- New test artifact API (experimental)
-- OpenTelemetry traces support (experimental)
-- File system cache improvements
-- Updated browser mode defaults
-- Pool options restructured
-- Breaking changes in configuration
+CI is green but has not actually run on Node 26: `.github/workflows/ci.yml` hard-codes
+`node: [24]` instead of reading `.node-version`, and no Playwright run was triggered.
 
 **What We Need to Do:**
-1. **Investigate test failures** - Check failed CI logs with `gh run view <run-id> --log-failed`
-2. **Review breaking changes** - Check [Vitest 4 migration guide](https://vitest.dev/guide/migration.html)
-3. **Update config** - `vitest.config.js` may need updates for:
-   - Pool options (deprecated `poolOptions` → new structure)
-   - Browser mode settings
-   - Test environment configuration
-4. **Fix failing tests** - Address any test failures caused by behavior changes
-5. **Update AGENTS.md** - Document any config changes if needed
-6. **Test both test suites:**
-   - `npm test` (unit/component tests)
-   - `npm run test:visual` (Playwright)
+1. Point `ci.yml` at `node-version-file: '.node-version'` (drop the `node` matrix).
+2. In the same change, update the "Require Tests" repository ruleset: it requires the check named
+   `ci (ubuntu-latest, 24)`, which the matrix change renames. Otherwise every PR stays blocked.
+3. Confirm `ci`, `test` (Playwright) and the Netlify preview pass on Node 26, then merge.
 
-**Estimated Complexity:** Medium (tests failing, needs investigation and fixes)
+### PR #296: Update ESLint to v10 (waiting on shared config)
+**Branch:** `renovate/major-eslint-monorepo`
 
----
+Needs a flat-config migration (`.eslintrc.json` → `eslint.config.js`); `@nuxtjs/eslint-config` 12
+only supports ESLint 8. A shared `straub/eslint-config` package is being prepared in a separate
+session; adopt it here once published, keeping the semicolon and always-multiline comma-dangle rules,
+and check lint-staged still works.
 
-### PR #296: Update ESLint to v9 ❌ Tests Failing
-**Branch:** `renovate/major-eslint-monorepo` | **Opened:** 2025-01-06
-**Changes:** `8.57.1` → `9.39.2` (1 addition, 1 deletion)
-
-This is a **major version upgrade** from ESLint 8 to ESLint 9 with **significant breaking changes** (flat config required).
-
-**Status:**
-- ❌ CI failing (16s)
-- ❌ Tests failing (10s)
-- ❌ Renovate artifacts failure
-- ✅ Security checks passing
-- ✅ Netlify deploy preview passing
-
-**Key Breaking Changes in ESLint 9:**
-- **Flat config is now required** - `.eslintrc.json` format is no longer supported
-- Must migrate to `eslint.config.js` (or `.mjs`/`.cjs`)
-- Changed default ignore patterns
-- Removed formatters (moved to `@eslint/stylistic`)
-- Plugin loading changes
-- Updated rule defaults
-
-**What We Need to Do:**
-1. **Investigate test failures** - Check failed CI logs
-2. **Migrate to flat config:**
-   - Convert `.eslintrc.json` → `eslint.config.js`
-   - Update `package.json` scripts if needed
-   - Migrate `@nuxtjs/eslint-config` → compatible flat config
-3. **Update lint-staged** - May need config changes in `package.json`
-4. **Review custom rules:**
-   - Current: semicolons required, always-multiline comma-dangle
-   - Ensure these rules still work in ESLint 9
-5. **Test linting:**
-   - `npm run lint` should work
-   - Pre-commit hooks should work
-6. **Check Nuxt compatibility** - Ensure Nuxt 3/4 works with ESLint 9
-7. **Update AGENTS.md** - Document new ESLint config format
-
-**Estimated Complexity:** High (requires config migration, significant breaking changes)
-
-**Resources:**
-- [ESLint v9 Migration Guide](https://eslint.org/docs/latest/use/migrate-to-9.0.0)
-- [Flat Config Guide](https://eslint.org/docs/latest/use/configure/configuration-files)
+### PR #380: Lock file maintenance
+Renovate's own lockfile refresh; it will be regenerated on its next scheduled run. When regenerating
+the lockfile by hand, do it in a scratch directory without `node_modules` (see the lockfile note in
+AGENTS.md), otherwise entries lose their `resolved`/`integrity` fields.
 
 ---
 
