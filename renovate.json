@@ -1,8 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:best-practices"
+    "config:best-practices",
+    "schedule:weekly",
+    "group:allNonMajor"
   ],
+  "updateNotScheduled": false,
   "packageRules": [
     {
       "description": "Automerge linters and test tools",
